@@ -3,10 +3,13 @@ resource "aws_eip" "eip" {
   vpc      = true
 
   tags {
-    Name        = "${var.instance_name} - EIP"
-    Owned       = "${var.instance_owner}"
-    Managed     = "${var.instance_managed}"
-    Environment = "${var.instance_environment}"
-    Billing     = "${var.cost_centre}"
+    Name        = "${var.Name} - EIP"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Department}"
+    Internal    = "${var.Internal}"
   }
 }
