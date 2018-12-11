@@ -8,6 +8,7 @@ variable "associate_public_ip" {}
 variable "disable_api_termination" {}
 variable "source_dest_check" {}
 variable "iam_instance_profile" {}
+variable "private_ip" {}
 
 variable "vpc_security_group_ids" {
   type = "list"
@@ -25,10 +26,13 @@ variable "ebs_volume_type" {}
 variable "ebs_volume_size" {}
 
 # Instance tagging
-variable "instance_name" {}
+variable "Name" {}
 
-variable "instance_owner" {}
-variable "instance_managed" {}
-variable "instance_internal_name" {}
-variable "instance_environment" {}
-variable "cost_centre" {}
+variable "Owner" {}
+variable "Managed" {}
+variable "Environment" {}
+variable "Cost" {}
+variable "Division" {}
+variable "Department" {}
+variable "Function" {}
+variable "Internal" {}

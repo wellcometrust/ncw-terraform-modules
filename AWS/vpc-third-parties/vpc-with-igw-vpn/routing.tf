@@ -14,14 +14,23 @@ resource "aws_route_table" "prod" {
   }
 
   route {
+    cidr_block = "10.183.0.0/16"
+    gateway_id = "${aws_vpn_gateway.aws-third-party-infrastructure-vpn.id}"
+  }
+
+  route {
     cidr_block = "10.70.2.0/24"
     gateway_id = "${aws_vpn_gateway.aws-third-party-infrastructure-vpn.id}"
   }
 
   tags {
-    Name    = "${var.vpc_name} - Public Route table"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Public Route table"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 
@@ -46,14 +55,28 @@ resource "aws_route_table" "private" {
   }
 
   route {
+    cidr_block = "10.183.0.0/16"
+    gateway_id = "${aws_vpn_gateway.aws-third-party-infrastructure-vpn.id}"
+  }
+
+  route {
     cidr_block = "10.70.2.0/24"
     gateway_id = "${aws_vpn_gateway.aws-third-party-infrastructure-vpn.id}"
   }
 
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_vpn_gateway.aws-third-party-infrastructure-vpn.id}"
+  }
+
   tags {
-    Name    = "${var.vpc_name} - Private Route table"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Private Route table"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 

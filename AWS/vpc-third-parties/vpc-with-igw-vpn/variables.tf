@@ -12,7 +12,13 @@ variable "enable_dns_support" {}
 # Tag Variables
 variable "vpc_name" {}
 
-variable "managed" {}
-variable "owner" {}
 variable "vpn-gateway-name" {}
 variable "vpn-connection-name" {}
+
+variable "Owner" {}
+variable "Managed" {}
+variable "Environment" {}
+variable "Cost" {}
+variable "Division" {}
+variable "Department" {}
+variable "Internal" {}

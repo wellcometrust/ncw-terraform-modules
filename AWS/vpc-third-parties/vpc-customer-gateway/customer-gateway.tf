@@ -5,8 +5,12 @@ resource "aws_customer_gateway" "aws-third-party-infrastructure-gateway" {
   type       = "ipsec.1"
 
   tags {
-    Name    = "${var.gateway-name}"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.Name}"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Department}"
   }
 }

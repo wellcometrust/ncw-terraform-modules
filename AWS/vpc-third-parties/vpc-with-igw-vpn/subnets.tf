@@ -6,9 +6,13 @@ resource "aws_subnet" "prod_a" {
   map_public_ip_on_launch = true
 
   tags {
-    Name    = "${var.vpc_name} - Prod Public - Subnet A"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Prod Public - Subnet A"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 
@@ -19,9 +23,13 @@ resource "aws_subnet" "prod_b" {
   map_public_ip_on_launch = true
 
   tags {
-    Name    = "${var.vpc_name} - Prod Public - Subnet B"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Prod Public - Subnet B"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 
@@ -32,9 +40,13 @@ resource "aws_subnet" "prod_c" {
   map_public_ip_on_launch = false
 
   tags {
-    Name    = "${var.vpc_name} - Prod Private - Subnet C"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Prod Private - Subnet C"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 
@@ -45,9 +57,13 @@ resource "aws_subnet" "prod_d" {
   map_public_ip_on_launch = false
 
   tags {
-    Name    = "${var.vpc_name} - Prod Private - Subnet D"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - Prod Private - Subnet D"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }
 
@@ -79,8 +95,12 @@ resource "aws_network_acl" "aws-third-party-infrastructure-acl" {
   }
 
   tags {
-    Name    = "${var.vpc_name} - ACL"
-    Owner   = "${var.owner}"
-    Managed = "${var.managed}"
+    Name        = "${var.vpc_name} - ACL"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Division}"
   }
 }

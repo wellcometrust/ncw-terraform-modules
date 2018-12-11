@@ -6,6 +6,7 @@ resource "aws_instance" "ec2-eip" {
   disable_api_termination = "${var.disable_api_termination}"
   source_dest_check       = "${var.source_dest_check}"
   ebs_optimized           = false
+  iam_instance_profile    = "${var.iam_instance_profile}"
 
   vpc_security_group_ids = [
     "${var.vpc_security_group_ids}",
@@ -17,11 +18,13 @@ resource "aws_instance" "ec2-eip" {
   }
 
   tags {
-    Name        = "${var.instance_name} - Instance"
-    Owned       = "${var.instance_owner}"
-    Managed     = "${var.instance_managed}"
-    Internal    = "${var.instance_internal_name}"
-    Environment = "${var.instance_environment}"
-    Billing     = "${var.cost_centre}"
+    Name        = "${var.Name} - Instance"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Division    = "${var.Division}"
+    Department  = "${var.Department}"
+    Internal    = "${var.Internal}"
   }
 }

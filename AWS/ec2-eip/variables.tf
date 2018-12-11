@@ -17,10 +17,14 @@ variable "root_volume_type" {}
 variable "root_volume_size" {}
 
 # Instance tagging
-variable "instance_name" {}
+variable "Name" {}
 
-variable "instance_owner" {}
-variable "instance_managed" {}
-variable "instance_internal_name" {}
-variable "instance_environment" {}
-variable "cost_centre" {}
+variable "Owner" {}
+variable "Managed" {}
+variable "Environment" {}
+variable "Cost" {}
+variable "Division" {}
+variable "Department" {}
+variable "Internal" {}
+
+variable "iam_instance_profile" {}

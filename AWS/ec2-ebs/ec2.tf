@@ -8,6 +8,7 @@ resource "aws_instance" "ec2-with-ebs" {
   source_dest_check           = "${var.source_dest_check}"
   iam_instance_profile        = "${var.iam_instance_profile}"
   ebs_optimized               = true
+  private_ip                  = "${var.private_ip}"
 
   vpc_security_group_ids = [
     "${var.vpc_security_group_ids}",
@@ -25,11 +26,14 @@ resource "aws_instance" "ec2-with-ebs" {
   }
 
   tags {
-    Name        = "${var.instance_name}"
-    Owned       = "${var.instance_owner}"
-    Managed     = "${var.instance_managed}"
-    Internal    = "${var.instance_internal_name}"
-    Environment = "${var.instance_environment}"
-    Billing     = "${var.cost_centre}"
+    Name        = "${var.Name}"
+    Owner       = "${var.Owner}"
+    Managed     = "${var.Managed}"
+    Internal    = "${var.Internal}"
+    Environment = "${var.Environment}"
+    Cost        = "${var.Cost}"
+    Function    = "${var.Function}"
+    Division    = "${var.Division}"
+    Department  = "${var.Department}"
   }
 }
