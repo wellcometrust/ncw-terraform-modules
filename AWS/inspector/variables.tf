@@ -12,6 +12,7 @@ variable "inspector_duration" {
 # Change variable to shedule run to whenever you want e.g. default = "cron(0 15 ? * MON *)"
 variable "inspector_schedule_expression" {
   description = "When AWS inspector should run."
+  default = "cron(0 19 ? * SUN *)"
 }
 
 variable "inspector_name" {
