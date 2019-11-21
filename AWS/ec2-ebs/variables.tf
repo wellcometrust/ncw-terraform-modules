@@ -10,9 +10,7 @@ variable "source_dest_check" {}
 variable "iam_instance_profile" {}
 variable "private_ip" {}
 
-variable "vpc_security_group_ids" {
-  type = "list"
-}
+variable "vpc_security_group_ids" {}
 
 # Root device
 variable "root_volume_type" {}

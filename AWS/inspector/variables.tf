@@ -1,6 +1,5 @@
 variable "inspector_rule_arns" {
   description = "Package arns to use for testing all the packages rules are in for default."
-  type        = "list"
   default = []
 }
 
@@ -21,7 +20,6 @@ variable "inspector_name" {
 
 variable "inspector_tags" {
   description = "Instance tags that you want to include in your security scan"
-  type        = "map"
 }
 
 # For Tags -  For our purposes!

@@ -11,9 +11,7 @@ variable "db_username" {}
 
 variable "db_password" {}
 
-variable "vpc_security_group_ids" {
-  type = "list"
-}
+variable "vpc_security_group_ids" {}
 
 variable "back_up_retention_period" {}
 
@@ -26,8 +24,6 @@ variable "instance_managed" {}
 variable "instance_environment" {}
 variable "cost_centre" {}
 
-variable "subnet_ids" {
-  type = "list"
-}
+variable "subnet_ids" {}
 
 variable "db_licence_model" {}
