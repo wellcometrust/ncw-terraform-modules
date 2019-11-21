@@ -8,7 +8,6 @@ variable "disable_api_termination" {}
 variable "source_dest_check" {}
 
 variable "vpc_security_group_ids" {
-  type = "list"
 }
 
 # Root device
