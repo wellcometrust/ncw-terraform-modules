@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "1",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:GetBucketLocation",
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:ListAllMyBuckets",
+        "s3:PutObjectTagging",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::commvault-s3-storage-pool"
+    }
+    ]
+  }
