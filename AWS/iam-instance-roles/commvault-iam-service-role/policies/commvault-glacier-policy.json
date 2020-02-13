@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Stmt1574088383054",
+      "Action": [
+        "glacier:AbortMultipartUpload",
+        "glacier:CompleteMultipartUpload",
+        "glacier:CreateVault",
+        "glacier:DeleteArchive",
+        "glacier:DeleteVault",
+        "glacier:DescribeJob",
+        "glacier:DescribeVault",
+        "glacier:GetJobOutput",
+        "glacier:InitiateJob",
+        "glacier:InitiateMultipartUpload",
+        "glacier:ListJobs",
+        "glacier:ListMultipartUploads",
+        "glacier:ListParts",
+        "glacier:ListVaults",
+        "glacier:UploadArchive",
+        "glacier:UploadMultipartPart"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:glacier:eu-west-1:205349831532:vaults/commvault-glacier-storage-vault"
+    }
+  ]
+}
