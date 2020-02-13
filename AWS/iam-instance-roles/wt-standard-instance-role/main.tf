@@ -28,7 +28,7 @@ resource "aws_iam_policy" "amazon-ec2-role-for-ssm" {
 
 resource "aws_iam_role_policy_attachment" "amazon-ecs-role-for-ssm-attachnment" {
   policy_arn = aws_iam_policy.amazon-ec2-role-for-ssm.arn
-  role       = aws_iam_role.wt-standard-instance-role
+  role       = aws_iam_role.wt-standard-instance-role.id
 }
 
 # Policy and attachment SSM Instance Core
@@ -45,7 +45,7 @@ resource "aws_iam_role_policy_attachment" "amazon-ssm-managed-instance-core-atta
 # Policy and attachment for Cloud Watch Logging
 resource "aws_iam_policy" "cloudwatch-agent-server-policy" {
   policy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-  role   = "${aws_iam_role.wt-standard-instance-role.id}"
+  role   = aws_iam_role.wt-standard-instance-role.id
 }
 
 resource "aws_iam_role_policy_attachment" "cloudwatch-agent-server-policy-attachment" {
