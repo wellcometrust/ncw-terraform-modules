@@ -16,7 +16,7 @@ resource "aws_iam_role" "wt-standard-instance-role-rds-s3" {
 }
 
 resource "aws_iam_instance_profile" "wt-standard-instance-profile-rds-s3" {
-  name = "WT_Standard_Instance_Role_S3"
+  name = "WT_Standard_Instance_Role_RDS_S3"
   role = aws_iam_role.wt-standard-instance-role-rds-s3.name
 }
 
