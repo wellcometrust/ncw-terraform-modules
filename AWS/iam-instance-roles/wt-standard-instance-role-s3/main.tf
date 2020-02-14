@@ -23,7 +23,6 @@ resource "aws_iam_instance_profile" "wt-standard-instance-profile-s3" {
 # Policy and attachment for SSM
 resource "aws_iam_policy" "amazon-ec2-role-for-ssm" {
   policy = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
-  role   = aws_iam_role.wt-standard-instance-role-s3.id
 }
 
 resource "aws_iam_role_policy_attachment" "amazon-ecs-role-for-ssm-attachnment" {
@@ -34,7 +33,6 @@ resource "aws_iam_role_policy_attachment" "amazon-ecs-role-for-ssm-attachnment" 
 # Policy and attachment SSM Instance Core
 resource "aws_iam_policy" "amazon-ssm-managed-instance-core" {
   policy = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  role   = aws_iam_role.wt-standard-instance-role-s3.id
 }
 
 resource "aws_iam_role_policy_attachment" "amazon-ssm-managed-instance-core-attachment" {
@@ -45,7 +43,6 @@ resource "aws_iam_role_policy_attachment" "amazon-ssm-managed-instance-core-atta
 # Policy and attachment for Cloud Watch Logging
 resource "aws_iam_policy" "cloudwatch-agent-server-policy" {
   policy = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
-  role   = aws_iam_role.wt-standard-instance-role-s3.id
 }
 
 resource "aws_iam_role_policy_attachment" "cloudwatch-agent-server-policy-attachment" {
@@ -56,7 +53,6 @@ resource "aws_iam_role_policy_attachment" "cloudwatch-agent-server-policy-attach
 # Policy and attachement to allow Access to all S3
 resource "aws_iam_policy" "amazon-s3-full-access" {
   policy = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-  role   = aws_iam_role.wt-standard-instance-role-s3.id
 }
 
 resource "aws_iam_role_policy_attachment" "amazon-s3-full-access-attachment" {
