@@ -15,7 +15,7 @@ resource "aws_iam_role" "wt-commvault-role" {
   }
 }
 
-esource "aws_iam_instance_profile" "wt-commvault-instance-profile" {
+resource "aws_iam_instance_profile" "wt-commvault-instance-profile" {
   name = "WT_Commvault_IAM_Instance_Profile"
   role = aws_iam_role.wt-commvault-role.name
 }
