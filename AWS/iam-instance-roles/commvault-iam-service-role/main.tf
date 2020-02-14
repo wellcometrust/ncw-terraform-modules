@@ -34,7 +34,7 @@ resource "aws_iam_policy_attachment" "wt-commvault-policy-attachement" {
 
 # Comvault Access to S3
 resource "aws_iam_role" "wt-commvault-s3-role" {
-  assume_role_policy = file("${path.module}/policies/s3-trust.json")
+  assume_role_policy = file("${path.module}/policies/ec2-trust.json")
   description        = "IAM Service Role allowing access for Commvault to S3"
   name               = "WT_Commvault_S3_Service_Role"
   tags = {
