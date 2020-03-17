@@ -32,3 +32,5 @@ variable "cost-a281" {
   description = "Sams Cost Centre"
   default     = "A281"
 }
+
+variable "iam-user-name" {}
