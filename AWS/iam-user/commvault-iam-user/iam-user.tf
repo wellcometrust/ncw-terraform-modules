@@ -1,8 +1,8 @@
 resource "aws_iam_user" "comvault-iam-user" {
-  name = "CommvaultUser"
+  name = var.iam-user-name
 
   tags = {
-    Name        = "Commvault_IAM_User"
+    Name        = var.iam-user-name
     Owner       = var.owner
     Managed     = var.managed
     Environment = "All"
