@@ -2,9 +2,9 @@
 resource "aws_iam_role" "wt-commvault-role" {
   assume_role_policy = file("${path.module}/policies/ec2-trust.json")
   description        = "IAM Instance Role fopr Commvault Instances"
-  name               = "WT_Commvault_IAM_Service_Role"
+  name               = "WT_Commvault_Instance_Role"
   tags = {
-    Name        = "WT_Commvault_IAM_Service_Role"
+    Name        = "WT_Commvault_Instance_Role"
     Owner       = var.owner
     Managed     = var.managed
     Environment = "All"
