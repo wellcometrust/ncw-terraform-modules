@@ -9,6 +9,8 @@ resource "aws_iam_role" "aws-inspector-role" {
     Cost        = var.cost
     Division    = var.division
     Department  = var.department
+    Internl     = var.internal
+    Use         = var.use
   }
 }
 
