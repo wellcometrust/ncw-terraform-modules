@@ -46,3 +46,12 @@ variable "division" {
 variable "department" {
   description = "Department the resource is owned by"
 }
+
+variable "internal" {
+  description = "Internal FQDN"
+}
+
+variable "use" {
+  description = "Use of the resource"
+}
+
