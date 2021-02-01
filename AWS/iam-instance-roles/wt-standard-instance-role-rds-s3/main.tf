@@ -5,13 +5,19 @@ resource "aws_iam_role" "wt-standard-instance-role-rds-s3" {
   name               = "WT_Standard_Instance_Role_RDS_S3"
   tags = {
     Name        = "WT_Standard_Instance_Role_RDS_S3"
-    Owner       = var.owner
-    Managed     = var.managed
-    Environment = "All"
-    Internal    = ""
-    Cost        = var.cost
-    Division    = var.division
-    Department  = var.department
+    Ansible       = var.Ansible
+    BackUps     = var.BackUps
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment    = var.Environment
+    Inspector = var.Inspector
+    Internal = var.Internal
+    Owner = var.Owner
+    PatchGroup = var.PatchGroup
+    Terraform = var.Terraform
+    Use = var.Use
+  }
   }
 }
 
