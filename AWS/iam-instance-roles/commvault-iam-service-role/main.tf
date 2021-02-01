@@ -5,13 +5,18 @@ resource "aws_iam_role" "wt-commvault-role" {
   name               = "WT_Commvault_Instance_Role"
   tags = {
     Name        = "WT_Commvault_Instance_Role"
-    Owner       = var.owner
-    Managed     = var.managed
-    Environment = "All"
-    Internal    = ""
-    Cost        = var.cost
-    Division    = var.division
-    Department  = var.department
+    Ansible       = var.Ansible
+    BackUps     = var.BackUps
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment    = var.Environment
+    Inspector = var.Inspector
+    Internal = var.Internal
+    Owner = var.Owner
+    PatchGroup = var.PatchGroup
+    Terraform = var.Terraform
+    Use = var.Use
   }
 }
 

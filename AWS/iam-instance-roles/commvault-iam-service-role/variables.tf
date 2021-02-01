@@ -1,13 +1,14 @@
 # Tagging variables
-variable "name" {}
-variable "owner" {}
-variable "managed" {}
-variable "environment" {}
-variable "internal" {}
-variable "cost" {}
-variable "department" {}
-variable "division" {}
-variable "use" {}
-variable "inspector" {}
-variable "backups" {}
+variable "Ansible" {}
+variable "BackUps" {}
+variable "Cost" {}
+variable "Department" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Inspector" {}
+variable "Internal" {}
+variable "Owner" {}
+variable "PatchGroup" {}
+variable "Terraform" {}
+variable "Use" {}
 

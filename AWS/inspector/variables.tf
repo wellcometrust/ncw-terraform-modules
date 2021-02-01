@@ -23,35 +23,16 @@ variable "inspector_tags" {
 }
 
 # For Tags -  For our purposes!
-variable "owner" {
-  description = "Owner of the resource"
-}
-
-variable "managed" {
-  description = "How the resource is managed i.e. Managed by terraform"
-}
-
-variable "environment" {
-  description = "What is the resources environment i.e. Production"
-}
-
-variable "cost" {
-  description = "Paying Cost Centre"
-}
-
-variable "division" {
-  description = "Division the resource is owned by"
-}
-
-variable "department" {
-  description = "Department the resource is owned by"
-}
-
-variable "internal" {
-  description = "Internal FQDN"
-}
-
-variable "use" {
-  description = "Use of the resource"
-}
+variable "Ansible" {}
+variable "BackUps" {}
+variable "Cost" {}
+variable "Department" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Inspector" {}
+variable "Internal" {}
+variable "Owner" {}
+variable "PatchGroup" {}
+variable "Terraform" {}
+variable "Use" {}
 
