@@ -18,7 +18,6 @@ resource "aws_iam_role" "wt-standard-instance-role-rds-s3" {
     Terraform = var.Terraform
     Use = var.Use
   }
-  }
 }
 
 resource "aws_iam_instance_profile" "wt-standard-instance-profile-rds-s3" {
