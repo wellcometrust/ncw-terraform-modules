@@ -131,7 +131,9 @@
         "kms:GenerateDataKeyWithoutPlaintext",
         "kms:ListKeys",
         "kms:ListAliases",
-        "kms:ListResourceTags"
+        "kms:ListResourceTags",
+        "ebs:ListChangedBlocks",
+        "ebs:ListSnapshotBlocks"
       ],
       "Resource": "*"
     }
