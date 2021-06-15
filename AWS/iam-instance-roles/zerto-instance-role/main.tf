@@ -23,6 +23,20 @@ resource "aws_iam_role" "zerto-instance-role" {
 resource "aws_iam_instance_profile" "zerto-instance-profile" {
   name = "Zerto_Instance_Role"
   role = aws_iam_role.zerto-instance-role.name
+  Name        = "Zerto_Instance_Profile"
+  Ansible       = var.Ansible
+  BackUps     = var.BackUps
+  Cost        = var.Cost
+  Department  = var.Department
+  Division    = var.Division
+  Environment    = var.Environment
+  Inspector = var.Inspector
+  Internal = var.Internal
+  Owner = var.Owner
+  PatchGroup = var.PatchGroup
+  Terraform = var.Terraform
+  Use = var.Use
+}
 }
 
 resource "aws_iam_policy" "zerto-instance-iam-policy" {
