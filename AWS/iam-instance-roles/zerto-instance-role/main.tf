@@ -23,6 +23,7 @@ resource "aws_iam_role" "zerto-instance-role" {
 resource "aws_iam_instance_profile" "zerto-instance-profile" {
   name = "Zerto_Instance_Role"
   role = aws_iam_role.zerto-instance-role.name
+  tags = {
   Name        = "Zerto_Instance_Profile"
   Ansible       = var.Ansible
   BackUps     = var.BackUps
