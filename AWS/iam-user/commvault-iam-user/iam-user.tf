@@ -4,14 +4,17 @@ resource "aws_iam_user" "comvault-iam-user" {
   tags = {
     Name        = var.iam-user-name
     Owner       = var.owner
-    Managed     = var.managed
+    Terraform     = var.terraform
     Environment = "All"
-    Internal    = ""
+    Internal    = var.internal
     Cost        = var.cost-a281
     Division    = var.division
     Department  = var.department
     Inspector   = var.inspector
     Use         = var.use-commvault
+    BackUps     = var.backups
+    Ansible     = var.ansible
+    PatchGroup  = var.patchgroup
   }
 }
 
