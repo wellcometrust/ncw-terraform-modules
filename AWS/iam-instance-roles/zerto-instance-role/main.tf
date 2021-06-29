@@ -44,6 +44,22 @@ resource "aws_iam_policy" "zerto-instance-iam-policy" {
   policy = file("${path.module}/policies/zerto-permissions-policy.json")
   description = "IAM Policy granting Access for Zerto instances"
   name = "Zerto_Instance_Policy"
+
+  tags = {
+    Name        = "Zerto_Instance_Policy"
+    Ansible       = var.Ansible
+    BackUps     = var.BackUps
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment    = var.Environment
+    Inspector = var.Inspector
+    Internal = var.Internal
+    Owner = var.Owner
+    PatchGroup = var.PatchGroup
+    Terraform = var.Terraform
+    Use = var.Use
+  }
 }
 
 
