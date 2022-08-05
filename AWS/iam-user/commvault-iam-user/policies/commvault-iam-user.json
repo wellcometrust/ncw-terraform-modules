@@ -134,7 +134,11 @@
         "kms:ListResourceTags",
         "ebs:ListChangedBlocks",
         "iam:SimulatePrincipalPolicy",
-        "ebs:ListSnapshotBlocks"
+        "ebs:ListSnapshotBlocks",
+        "ebs:GetSnapshotBlock",
+        "iam:SimulatePrincipalPolicy",
+        "ec2:DescribeVpcEndpoints"
+
       ],
       "Resource": "*"
     }
