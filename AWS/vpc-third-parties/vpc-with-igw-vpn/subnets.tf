@@ -7,12 +7,17 @@ resource "aws_subnet" "prod_a" {
 
   tags {
     Name        = "${var.vpc_name} - Prod Public - Subnet A"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -24,12 +29,17 @@ resource "aws_subnet" "prod_b" {
 
   tags {
     Name        = "${var.vpc_name} - Prod Public - Subnet B"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -41,12 +51,17 @@ resource "aws_subnet" "prod_c" {
 
   tags {
     Name        = "${var.vpc_name} - Prod Private - Subnet C"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -58,12 +73,17 @@ resource "aws_subnet" "prod_d" {
 
   tags {
     Name        = "${var.vpc_name} - Prod Private - Subnet D"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -96,11 +116,16 @@ resource "aws_network_acl" "aws-third-party-infrastructure-acl" {
 
   tags {
     Name        = "${var.vpc_name} - ACL"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }

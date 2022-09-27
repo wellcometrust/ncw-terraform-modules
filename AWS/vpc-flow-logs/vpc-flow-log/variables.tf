@@ -1,5 +1,12 @@
 variable "name" {}
-variable "managed" {}
-variable "owner" {}
-variable "vpc_id" {}
-variable "vpc_flow_log_role_arn" {}
+variable "Owner" {}
+variable "Cost" {}
+variable "Department" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Terraform" {}
+variable "Use" {}
+variable "Ansible" {}
+variable "Internal" {}
+variable "BackUps" {}
+variable "PatchGroup" {}

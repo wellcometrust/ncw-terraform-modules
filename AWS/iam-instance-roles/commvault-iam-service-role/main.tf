@@ -11,7 +11,6 @@ resource "aws_iam_role" "wt-commvault-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -31,7 +30,6 @@ resource "aws_iam_instance_profile" "wt-commvault-instance-profile" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -51,7 +49,6 @@ resource "aws_iam_policy" "wt-commvault-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -77,7 +74,6 @@ resource "aws_iam_policy" "wt-commvault-s3-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -102,7 +98,6 @@ resource "aws_iam_policy" "wt-commvault-glacier-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

@@ -8,7 +8,6 @@ resource "aws_iam_role" "aws-inspector-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

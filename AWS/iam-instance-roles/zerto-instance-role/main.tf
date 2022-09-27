@@ -11,7 +11,6 @@ resource "aws_iam_role" "zerto-instance-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -31,7 +30,6 @@ resource "aws_iam_instance_profile" "zerto-instance-profile" {
   Department  = var.Department
   Division    = var.Division
   Environment    = var.Environment
-  Inspector = var.Inspector
   Internal = var.Internal
   Owner = var.Owner
   PatchGroup = var.PatchGroup
@@ -53,7 +51,6 @@ resource "aws_iam_policy" "zerto-instance-iam-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

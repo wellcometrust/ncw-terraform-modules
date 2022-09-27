@@ -26,14 +26,17 @@ resource "aws_instance" "ec2-with-ebs" {
   }
 
   tags {
-    Name        = var.Name
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Internal    = var.Internal
-    Environment = var.Environment
-    Cost        = var.Cost
-    Function    = var.Function
-    Division    = var.Division
-    Department  = var.Department
+    Name          = var.Name
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }

@@ -4,12 +4,17 @@ resource "aws_ebs_volume" "ebs" {
   size              = var.size
 
   tags {
-    Name        = var.Name
-    Owner       = var.Owner
-    Division    = var.Division
-    Department  = var.Department
-    Cost        = var.Cost
-    Managed     = var.Managed
-    Environemnt = var.Environment
+    Name          = var.Name
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }

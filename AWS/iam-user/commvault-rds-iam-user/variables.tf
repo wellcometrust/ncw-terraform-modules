@@ -13,11 +13,6 @@ variable "division" {
   default     = "Finance / Grants / Digital and Technology / Facilities / Workplace"
 }
 
-variable "inspector" {
-  description = "Used for AWS Inspector set to True for resource to be included"
-  default     = "True"
-}
-
 variable "department" {
   description = "Department"
   default     = "Digital and Technology"

@@ -10,7 +10,6 @@ resource "aws_iam_user" "commvault-rds-iam-user" {
     Cost        = var.cost-a281
     Division    = var.division
     Department  = var.department
-    Inspector   = var.inspector
     Use         = var.use-commvault
     BackUps     = var.backups
     Ansible     = var.ansible

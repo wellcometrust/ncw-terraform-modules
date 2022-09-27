@@ -25,12 +25,14 @@ variable "ebs_volume_size" {}
 
 # Instance tagging
 variable "Name" {}
-
 variable "Owner" {}
-variable "Managed" {}
-variable "Environment" {}
 variable "Cost" {}
-variable "Division" {}
 variable "Department" {}
-variable "Function" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Terraform" {}
+variable "Use" {}
+variable "Ansible" {}
 variable "Internal" {}
+variable "BackUps" {}
+variable "PatchGroup" {}
