@@ -25,11 +25,17 @@ resource "aws_db_instance" "rds-instance" {
 
   tags {
     Name        = "${var.db_name} - RDS Instance"
-    Owned       = var.instance_owner
-    Managed     = var.instance_managed
-    Internal    = "${var.db_name}.wellcomeit.com"
-    Environment = var.instance_environment
-    Billing     = var.cost_centre
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -40,9 +46,16 @@ resource "aws_db_subnet_group" "rds-subnet-group" {
 
   tags {
     Name        = "${var.db_name}-subnet-group"
-    Owned       = var.instance_owner
-    Managed     = var.instance_managed
-    Environment = var.instance_environment
-    Billing     = var.cost_centre
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }

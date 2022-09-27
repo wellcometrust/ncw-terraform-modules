@@ -9,7 +9,6 @@ resource "aws_cloudwatch_event_rule" "aws-inspector" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

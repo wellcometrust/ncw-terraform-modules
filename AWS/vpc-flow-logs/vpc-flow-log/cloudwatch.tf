@@ -5,7 +5,16 @@ resource "aws_cloudwatch_log_group" "prod-vpc-flow-log-group" {
 
   tags {
     Name    = "${var.name} - VPC Log Group"
-    Owned   = var.owner
-    Managed = var.managed
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }

@@ -25,12 +25,17 @@ resource "aws_route_table" "prod" {
 
   tags {
     Name        = "${var.vpc_name} - Public Route table"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -71,12 +76,17 @@ resource "aws_route_table" "private" {
 
   tags {
     Name        = "${var.vpc_name} - Private Route table"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Division
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
 

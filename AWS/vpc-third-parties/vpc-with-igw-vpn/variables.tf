@@ -16,9 +16,13 @@ variable "vpn-gateway-name" {}
 variable "vpn-connection-name" {}
 
 variable "Owner" {}
-variable "Managed" {}
-variable "Environment" {}
 variable "Cost" {}
-variable "Division" {}
 variable "Department" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Terraform" {}
+variable "Use" {}
+variable "Ansible" {}
 variable "Internal" {}
+variable "BackUps" {}
+variable "PatchGroup" {}

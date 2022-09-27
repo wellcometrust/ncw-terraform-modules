@@ -11,7 +11,6 @@ resource "aws_iam_role" "wt-standard-instance-role-rds-s3" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup
@@ -31,7 +30,6 @@ resource "aws_iam_instance_profile" "wt-standard-instance-profile-rds-s3" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

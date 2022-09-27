@@ -12,7 +12,6 @@ resource "aws_iam_policy" "commvault-iam-user-policy" {
     Cost        = var.cost-a281
     Division    = var.division
     Department  = var.department
-    Inspector   = var.inspector
     Use         = var.use-commvault
     BackUps     = var.backups
     Ansible     = var.ansible

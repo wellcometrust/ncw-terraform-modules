@@ -34,7 +34,7 @@ ___
 >*Optional field if you would like to add any analysis not captured in the risk assessment.
 
 ### Back Out Plan
->Describe the steps you will take to revert the pull request to its pre-implementation state. Be specific, if particular objects need to be restored provide the name and location of the object.
+Revert pull request and redeploy
 
 ### Test Plan
 >Populate the test plan with steps you will take to test the pull request

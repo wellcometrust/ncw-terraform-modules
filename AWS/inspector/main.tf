@@ -27,7 +27,6 @@ resource "aws_inspector_assessment_template" "inspector-assessment-template" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Inspector = var.Inspector
     Internal = var.Internal
     Owner = var.Owner
     PatchGroup = var.PatchGroup

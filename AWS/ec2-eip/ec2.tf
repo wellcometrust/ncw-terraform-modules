@@ -19,12 +19,16 @@ resource "aws_instance" "ec2-eip" {
 
   tags {
     Name        = "${var.Name} - Instance"
-    Owner       = var.Owner
-    Managed     = var.Managed
-    Environment = var.Environment
-    Cost        = var.Cost
-    Division    = var.Division
-    Department  = var.Department
-    Internal    = var.Internal
+    Owner         = var.Owner
+    Division        = var.Division
+    Department    = var.Department
+    Cost          = var.Cost
+    Terraform     = var.Terraform
+    Environment   = var.Environment
+    Internal      = var.Internal
+    Use           = var.Use
+    BackUps       = var.BackUps
+    Ansible       = var.Ansible
+    PatchGroup    = var.PatchGroup
   }
 }
