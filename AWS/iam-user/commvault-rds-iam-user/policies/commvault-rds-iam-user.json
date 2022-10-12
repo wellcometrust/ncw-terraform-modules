@@ -28,6 +28,8 @@
               "ec2:DescribeVpcs",
               "ec2:DescribeAccountAttributes",
               "ec2:DescribeSubnets",
+              "ec2:DescribeInstanceTypes",
+              "ec2:DescribeInstanceTypeOfferings",
               "iam:GetUser",
               "iam:GetAccountAuthorizationDetails",
               "kms:ReEncrypt*",
