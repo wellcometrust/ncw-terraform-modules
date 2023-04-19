@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowsToReadEC2Details",
+        "Effect": "Allow",
+        "Action": [
+          "ec2:DescribeInstances",
+            "ec2:DescribeAddresses",
+            "ec2:DescribeImages",
+            "ec2:DescribeRegions",
+            "organizations:list*"
+        ],
+        "Resource" :"*"
+      }
+    ]
+  }
