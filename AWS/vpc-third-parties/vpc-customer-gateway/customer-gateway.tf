@@ -12,10 +12,6 @@ resource "aws_customer_gateway" "aws-third-party-infrastructure-gateway" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }

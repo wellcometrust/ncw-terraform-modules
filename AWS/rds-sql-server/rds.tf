@@ -31,11 +31,7 @@ resource "aws_db_instance" "rds-instance" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -52,10 +48,6 @@ resource "aws_db_subnet_group" "rds-subnet-group" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }

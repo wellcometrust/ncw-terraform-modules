@@ -11,10 +11,6 @@ resource "aws_cloudwatch_log_group" "prod-vpc-flow-log-group" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
