@@ -36,7 +36,3 @@ variable "Division" {}
 variable "Environment" {}
 variable "Terraform" {}
 variable "Use" {}
-variable "Ansible" {}
-variable "Internal" {}
-variable "BackUps" {}
-variable "PatchGroup" {}

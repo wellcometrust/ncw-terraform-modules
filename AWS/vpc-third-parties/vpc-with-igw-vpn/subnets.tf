@@ -13,11 +13,7 @@ resource "aws_subnet" "prod_a" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -35,11 +31,7 @@ resource "aws_subnet" "prod_b" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -57,11 +49,7 @@ resource "aws_subnet" "prod_c" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -79,11 +67,7 @@ resource "aws_subnet" "prod_d" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -122,10 +106,6 @@ resource "aws_network_acl" "aws-third-party-infrastructure-acl" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }

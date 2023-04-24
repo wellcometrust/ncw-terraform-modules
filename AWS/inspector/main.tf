@@ -21,15 +21,11 @@ resource "aws_inspector_assessment_template" "inspector-assessment-template" {
   rules_package_arns = split(",", local.rules_package_arns)
 
   tags = {
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }

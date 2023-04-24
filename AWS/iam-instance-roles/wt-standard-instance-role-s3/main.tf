@@ -5,15 +5,11 @@ resource "aws_iam_role" "wt-standard-instance-role-s3" {
   name               = "WT_Standard_Instance_Role_S3"
   tags = {
     Name        = "WT_Standard_Instance_Role_S3"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -24,15 +20,11 @@ resource "aws_iam_instance_profile" "wt-standard-instance-profile-s3" {
   role = aws_iam_role.wt-standard-instance-role-s3.name
   tags = {
   Name        = "WT_Standard_Instance_Profile_S3"
-  Ansible       = var.Ansible
-  BackUps     = var.BackUps
   Cost        = var.Cost
   Department  = var.Department
   Division    = var.Division
   Environment    = var.Environment
-  Internal = var.Internal
   Owner = var.Owner
-  PatchGroup = var.PatchGroup
   Terraform = var.Terraform
   Use = var.Use
 }

@@ -14,13 +14,13 @@
 ___
 
 
-## Liquid Planner / Service Now References
+## MCOM / Service Now References
 
-### Liquid Planner and / or Service Now References
->Please insert any reference numbers to outside applications i.e. Change Request or Incident number from Service Now, Liquid Planner reference number 
+### MCOM and / or Service Now References
+>Please insert any reference numbers to outside applications i.e. Change Request or Incident number from Service Now, MCOM reference number
 
-### Link to Liquid Planner Task / Service Now
->Provide a link to the change
+### Link to MCOM / Service Now
+>Provide a link to the change / MCOM item
 
 ---
 
@@ -34,17 +34,24 @@ ___
 >*Optional field if you would like to add any analysis not captured in the risk assessment.
 
 ### Back Out Plan
-Revert pull request and redeploy
+>Describe the steps you will take to revert the pull request to its pre-implementation state. Be specific, if particular objects need to be restored provide the name and location of the object.
+
+Revert Pull Request and Redeploy
 
 ### Test Plan
 >Populate the test plan with steps you will take to test the pull request
 
 ---
 ## Risk Analysis
+### What is the business criticality of the item to be changed (If in doubt seek advice)
+- [ ] Business Continuity Application or Service e.g. Agresso, Funding Platform, Bloomberg
+- [ ] Business Essential (departmental system that can be worked around)
+- [ ] Application level impact (e.g. Upgrade)
+
 ### What is the impact to Wellcome if this pull request fails?
 - [ ] Legal / Financial / Reputational
 - [ ] Moderate widespread disruption
-- [ ] No Key Systems Affected / Back end systems only
+- [ ] No key systems affected / Back end systems only
 
 ### How many users will the pull request affect?
 - [ ] Wellcome Wide (100+ people)
@@ -59,6 +66,23 @@ Revert pull request and redeploy
 - [ ] No, Never done before
 - [ ] Yes, there are many steps and multiple teams involved
 - [ ] Yes, many times and it is documented
+
+### Is this change approved by you line manager?
+- [ ] Not line manager approved / aware
+- [ ] Line manager approved / aware
+
+### Internal stakeholders advised e.g. Service desk?
+- [ ] Yes
+- [ ] No
+- [ ] N/A
+
+### Relevant documentation produced / updated / retired? Confluence etc
+- [ ] Yes
+- [ ] No
+- [ ] N/A
+
+### Please provide a link to the Documentaion
+[Replace with link name](https://)
 
 
 

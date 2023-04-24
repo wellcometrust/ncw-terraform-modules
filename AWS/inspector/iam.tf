@@ -2,15 +2,11 @@ resource "aws_iam_role" "aws-inspector-role" {
   name_prefix = "AWS-Inspector-${var.inspector_name}"
   assume_role_policy = file("${path.module}/policies/aws_inspector_role.json")
   tags = {
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }

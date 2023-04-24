@@ -5,15 +5,11 @@ resource "aws_iam_role" "wt-commvault-role" {
   name               = "WT_Commvault_Instance_Role"
   tags = {
     Name        = "WT_Commvault_Instance_Role"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -24,15 +20,11 @@ resource "aws_iam_instance_profile" "wt-commvault-instance-profile" {
   role = aws_iam_role.wt-commvault-role.name
   tags = {
     Name        = "WT_Commvault_Instance_Profile"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -43,15 +35,11 @@ resource "aws_iam_policy" "wt-commvault-role-policy" {
   name   = "WT_Commvault_IAM_Role_Policy"
   tags = {
     Name        = "WT_Commvault_IAM_Role_Policy"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -68,15 +56,11 @@ resource "aws_iam_policy" "wt-commvault-s3-role-policy" {
   name   = "WT_Commvault_S3_Role_Policy"
   tags = {
     Name        = "WT_Commvault_S3_Role_Policy"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -92,15 +76,11 @@ resource "aws_iam_policy" "wt-commvault-glacier-role-policy" {
   name   = "WT_Commvault_Glacier_Role_Policy"
   tags = {
     Name        = "WT_Commvault_Glacier_Role_Policy"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }

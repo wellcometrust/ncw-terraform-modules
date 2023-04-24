@@ -11,11 +11,7 @@ resource "aws_vpn_gateway" "aws-third-party-infrastructure-vpn" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 
@@ -33,11 +29,7 @@ resource "aws_vpn_connection" "aws-third-party-infrastructure-vpn" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
   }
 }
 

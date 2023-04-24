@@ -7,15 +7,11 @@ resource "aws_iam_role" "wt-qualys-role" {
 
   tags = {
     Name        = "wt-qualys-role"
-    Ansible     = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
-    Internal    = var.Internal
     Owner       = var.Owner
-    PatchGroup  = var.PatchGroup
     Terraform   = var.Terraform
     Use         = var.Use
   }
@@ -29,15 +25,11 @@ resource "aws_iam_policy" "wt-qualys-policy" {
 
   tags = {
     Name        = "wt-qualys-policy"
-    Ansible     = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
-    Internal    = var.Internal
     Owner       = var.Owner
-    PatchGroup  = var.PatchGroup
     Terraform   = var.Terraform
     Use         = var.Use
   }

@@ -3,15 +3,11 @@ resource "aws_cloudwatch_event_rule" "aws-inspector" {
   description         = "AWS Inspector run for ${var.inspector_name}"
   schedule_expression = var.inspector_schedule_expression
   tags = {
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }

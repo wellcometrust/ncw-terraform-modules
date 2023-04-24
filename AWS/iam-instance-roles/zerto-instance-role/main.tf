@@ -5,15 +5,11 @@ resource "aws_iam_role" "zerto-instance-role" {
   name               = "Zerto_Instance_Role"
   tags = {
     Name        = "Zerto_Instance_Role"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
@@ -24,15 +20,11 @@ resource "aws_iam_instance_profile" "zerto-instance-profile" {
   role = aws_iam_role.zerto-instance-role.name
   tags = {
   Name        = "Zerto_Instance_Profile"
-  Ansible       = var.Ansible
-  BackUps     = var.BackUps
   Cost        = var.Cost
   Department  = var.Department
   Division    = var.Division
   Environment    = var.Environment
-  Internal = var.Internal
   Owner = var.Owner
-  PatchGroup = var.PatchGroup
   Terraform = var.Terraform
   Use = var.Use
 }
@@ -45,15 +37,12 @@ resource "aws_iam_policy" "zerto-instance-iam-policy" {
 
   tags = {
     Name        = "Zerto_Instance_Policy"
-    Ansible       = var.Ansible
-    BackUps     = var.BackUps
+
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
-    Internal = var.Internal
     Owner = var.Owner
-    PatchGroup = var.PatchGroup
     Terraform = var.Terraform
     Use = var.Use
   }
