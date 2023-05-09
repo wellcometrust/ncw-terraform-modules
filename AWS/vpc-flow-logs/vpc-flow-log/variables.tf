@@ -1,4 +1,6 @@
-variable "name" {}
+variable "vpc_name" {}
+variable "vpc_flow_log_role_arn" {}
+variable "vpc_id" {}
 variable "Owner" {}
 variable "Cost" {}
 variable "Department" {}
