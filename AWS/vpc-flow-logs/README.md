@@ -1,10 +1,10 @@
-# vpc-flow-logs
-Useable in any AWS account.  Whenever you create a new VPC this module can be used to set up VPC Flow Logging for that VPC.  You will need to run this once per VPC.  These are also a requirement for the MSSP.
+# VPC Flow Logs
 
+This module creates an VPC Flow Logs.
 
-## vpc-flow-logs-iam-role
-Creates and sets a role that outputs an ARN which allows logging to CloudWatch.
+## Things to Note
 
-## vpc-flow-log
-Sets up the logging within VPC
+* Before you run this first create the vpc-flow-logs-iam-role (another module).
+* The output of that module is one of the inputs of this module.
+* One role is needed per account, but an account can have multiple flow logs so seperated out
 
