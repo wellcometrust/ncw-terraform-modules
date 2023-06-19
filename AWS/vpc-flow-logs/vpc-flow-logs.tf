@@ -1,5 +1,5 @@
 # VPC Flow Logs for VPC
-resource "aws_flow_log" "vpc-flow-log" {
+resource "aws_flow_log" "prod-vpc-flow-log" {
   iam_role_arn   = var.vpc_flow_log_role_arn
   log_destination = aws_cloudwatch_log_group.vpc-flow-log-group.arn
   log_destination_type = "cloud-watch-logs"
@@ -13,7 +13,7 @@ resource "aws_flow_log" "vpc-flow-log" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Internal    = var.Terraform
     Use         = var.Use
-    Terraform     = var.Terraform
   }
 }
