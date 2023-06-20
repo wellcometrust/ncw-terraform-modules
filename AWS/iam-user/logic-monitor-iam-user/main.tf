@@ -19,7 +19,7 @@ resource "aws_iam_policy" "logicmonitor-iam-user-policy" {
   description = "This policy allows access to the resources for LogicMonitor Log Forwarder"
   name        = "svc_logicmnonitor-iam-user-policy"
   tags = {
-    Name        = svc_logicmnonitor-iam-user-policy
+    Name        = "svc_logicmnonitor-iam-user-policy"
     Owner       = var.Owner
     Terraform     = var.Terraform
     Environment = "All"
