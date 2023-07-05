@@ -2,7 +2,7 @@
 	"Version": "2012-10-17",
 	"Statement": [
 		{
-			"Sid": "SSM-DescribeInstanceInformation",
+			"Sid": "SSMDescribeInstanceInformation",
 			"Effect": "Allow",
 			"Action": "ssm:DescribeInstanceInformation",
 			"Resource": "*"
