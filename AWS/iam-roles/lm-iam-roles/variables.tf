@@ -6,3 +6,4 @@ variable "Environment" {}
 variable "Owner" {}
 variable "Terraform" {}
 variable "Use" {}
+variable "STS_External_ID" {}
