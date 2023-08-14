@@ -1,0 +1,9 @@
+# Tagging variables
+variable "Cost" {}
+variable "Department" {}
+variable "Division" {}
+variable "Environment" {}
+variable "Owner" {}
+variable "Terraform" {}
+variable "Use" {}
+variable "STS_External_ID" {}
