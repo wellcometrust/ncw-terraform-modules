@@ -2,7 +2,7 @@
 resource "aws_iam_role" "lm-iam-role" {
   name               = "LM-Role"
   description        = "Role for LM to Utilise"
-  assume_role_policy = templatefile("./policies/lm-trust.json.tpl", STS_External_ID = var.STS_External_ID)
+  assume_role_policy = templatefile("./policies/lm-trust.json.tpl", { STS_External_ID = var.STS_External_ID })
   tags = {
     Name        = "LM Role"
     Cost        = var.Cost
