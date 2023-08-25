@@ -90,3 +90,14 @@ resource "aws_iam_role_policy_attachment" "wt-commvault-policy-attachement-3" {
   policy_arn = aws_iam_policy.wt-commvault-glacier-role-policy.arn
   role       = aws_iam_role.wt-commvault-role.name
 }
+
+resource "aws_iam_role_policy_attachment" "amazon-ecs-role-for-ssm-attachnment" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+  role       = aws_iam_role.wt-commvault-role.name
+}
+
+# Policy attachment SSM Instance Core
+resource "aws_iam_role_policy_attachment" "amazon-ssm-managed-instance-core-attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.wt-commvault-role.name
+}
