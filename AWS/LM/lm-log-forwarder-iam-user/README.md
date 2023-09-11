@@ -21,3 +21,6 @@ module "svc-logicmonitor-user" {
   Use                   = var.Use
 }
 ```
+
+## After Creation
+You will need to create a secret key for each user as these need to be passed as variables when creating the Log forwarder.
