@@ -5,7 +5,7 @@ resource "aws_iam_user" "logicmonitor-iam-user" {
     Name        = "svc_logicmonitor"
     Owner       = var.Owner
     Terraform     = var.Terraform
-    Environment = "All"
+    Environment = var.Environment
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
@@ -22,7 +22,7 @@ resource "aws_iam_policy" "logicmonitor-iam-user-policy" {
     Name        = "svc_logicmnonitor-iam-user-policy"
     Owner       = var.Owner
     Terraform     = var.Terraform
-    Environment = "All"
+    Environment = var.Environment
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
