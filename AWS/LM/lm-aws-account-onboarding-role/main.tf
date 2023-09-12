@@ -18,6 +18,7 @@ resource "aws_iam_role" "lm-iam-role" {
 resource "aws_iam_policy" "lm-iam-policy" {
   policy      = file("${path.module}/policies/lm-policy.json")
   description = "Policy for LM to Utilise to Onboard the Account"
+  name        = "LM-Account-Onboarding-Role-Policy"
   tags = {
     Name        = "LM-Account-Onboarding-Role-Policy"
     Cost        = var.Cost
