@@ -20,6 +20,5 @@ resource "aws_cloudformation_stack" "lm_forwarder" {
     Department  = var.Department
     Use         = var.Use
     Terraform   = var.Terraform
-
   }
 }

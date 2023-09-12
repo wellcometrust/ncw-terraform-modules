@@ -1,10 +1,10 @@
 # Role to grant LM Access
 resource "aws_iam_role" "lm-iam-role" {
-  name               = "LM-Role"
-  description        = "Role for LM to Utilise"
+  name               = "LM-Account-Onboarding-Role"
+  description        = "Role for LM to Utilise to Onboard the Account"
   assume_role_policy = templatefile(("${path.module}/policies/lm-trust.json.tpl"), { STS_External_ID = var.STS_External_ID })
   tags = {
-    Name        = "LM Role"
+    Name        = "LM-Account-Onboarding-Role"
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
@@ -17,9 +17,9 @@ resource "aws_iam_role" "lm-iam-role" {
 
 resource "aws_iam_policy" "lm-iam-policy" {
   policy      = file("${path.module}/policies/lm-policy.json")
-  description = "Policy for LM to Utilise"
+  description = "Policy for LM to Utilise to Onboard the Account"
   tags = {
-    Name        = "LM Policy"
+    Name        = "LM-Account-Onboarding-Role-Policy"
     Cost        = var.Cost
     Department  = var.Department
     Division    = var.Division
