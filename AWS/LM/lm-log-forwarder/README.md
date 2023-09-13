@@ -5,7 +5,7 @@ This Module will be deployed in each of the AWS Accounts where we wish to create
 ## What it does
 * Creates a Cloud Formation Stack called `LMLogsForwarder` with some parameters.  
 
-NB The Cloud formation Stack is provided by LM and the curled URL ensures we always have the latest version deployed.  Periodically we should delete the .terraform file in our local environment and force it to check if there is a new version of the template.
+NB Each time you run a plan on a repo that has the Log forwarder in, it will want to update to ensure we have the  latest version deployed.  This is fine! The Cloud formation Stack is provided by LM and the curled URL ensures we always have the latest version deployed.  Periodically we should delete the .terraform file in our local environment and force it to check if there is a new version of the template.
 
 
 ## How to Use
