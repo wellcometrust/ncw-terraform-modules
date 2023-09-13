@@ -17,6 +17,7 @@ module "lm-aws-account-onboarding-role" {
   Cost                  = var.Cost
   Department            = var.Department
   Division              = var.Division
+  Environment           = var.Environment
   Owner                 = var.Owner
   STS_External_ID       = var.STS_External_ID
   Terraform             = var.Terraform

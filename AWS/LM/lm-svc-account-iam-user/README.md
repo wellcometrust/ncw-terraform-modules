@@ -1,6 +1,6 @@
 # LM Log Forwarder IAM User
 
-This Module will be deployed in each of the AWS Accounts where we wish to create A Log Forwarder that will have the ability to forward CloudTrail and other Logs onto the NCW LogicMonitor Cloud Platform
+This Module will be deployed in each of the AWS Accounts where we wish to create a service account for LM to utilise.
 
 ## What it does
 * Creates an IAM User called `svc_logicmonitor`
@@ -11,11 +11,12 @@ This Module will be deployed in each of the AWS Accounts where we wish to create
 Create a module block in your TF and supply it with the source
 ```
 module "svc-logicmonitor-user" {
-  source                = "github.com/wellcometrust/ncw-terraform-modules/AWS/LM/lm-log-forwarder-iam-user"
+  source                = "github.com/wellcometrust/ncw-terraform-modules/AWS/LM/lm-svc-account-iam-user"
   -iam-user"
   Cost                  = var.Cost
   Department            = var.Department
   Division              = var.Division
+  Environment           = var.Environment
   Owner                 = var.Owner
   Terraform             = var.Terraform
   Use                   = var.Use
@@ -23,4 +24,4 @@ module "svc-logicmonitor-user" {
 ```
 
 ## After Creation
-You will need to create a secret key for each user as these need to be passed as variables when creating the Log forwarder.
+You will need to create a secret key for each user and store those details securely in password manager.
