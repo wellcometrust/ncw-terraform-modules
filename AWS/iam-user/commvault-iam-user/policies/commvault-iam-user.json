@@ -117,6 +117,7 @@
         "s3:PutObject",
         "s3:PutObjectAcl",
         "s3:PutObjectTagging",
+        "s3:RestoreObject",
         "ssm:CancelCommand",
         "ssm:DescribeDocument",
         "ssm:DescribeInstanceInformation",
