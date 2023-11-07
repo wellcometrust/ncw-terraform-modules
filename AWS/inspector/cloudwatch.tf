@@ -9,6 +9,7 @@ resource "aws_cloudwatch_event_rule" "aws-inspector" {
     Environment    = var.Environment
     Owner = var.Owner
     Terraform = var.Terraform
+    Monitoring    = var.Monitoring
     Use = var.Use
   }
 }

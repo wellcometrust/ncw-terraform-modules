@@ -29,3 +29,4 @@ variable "cost-a281" {
 }
 
 variable "iam-user-name" {}
+variable "Monitoring" {}

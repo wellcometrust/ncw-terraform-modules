@@ -9,6 +9,7 @@ resource "aws_iam_role" "wt-commvault-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use
@@ -24,6 +25,7 @@ resource "aws_iam_instance_profile" "wt-commvault-instance-profile" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use
@@ -39,6 +41,7 @@ resource "aws_iam_policy" "wt-commvault-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use
@@ -60,6 +63,7 @@ resource "aws_iam_policy" "wt-commvault-s3-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use
@@ -80,6 +84,7 @@ resource "aws_iam_policy" "wt-commvault-glacier-role-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use

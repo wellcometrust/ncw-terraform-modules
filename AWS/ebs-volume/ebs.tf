@@ -6,8 +6,9 @@ resource "aws_ebs_volume" "ebs" {
   tags {
     Name          = var.Name
     Owner         = var.Owner
-    Division        = var.Division
+    Division      = var.Division
     Department    = var.Department
+    Monitoring    = var.Monitoring
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment

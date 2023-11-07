@@ -9,6 +9,7 @@ resource "aws_iam_role" "zerto-instance-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use
@@ -24,6 +25,7 @@ resource "aws_iam_instance_profile" "zerto-instance-profile" {
   Department  = var.Department
   Division    = var.Division
   Environment    = var.Environment
+    Monitoring    = var.Monitoring
   Owner = var.Owner
   Terraform = var.Terraform
   Use = var.Use
@@ -42,6 +44,7 @@ resource "aws_iam_policy" "zerto-instance-iam-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use

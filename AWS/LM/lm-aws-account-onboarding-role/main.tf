@@ -9,6 +9,7 @@ resource "aws_iam_role" "lm-iam-role" {
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring    = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use
@@ -25,6 +26,7 @@ resource "aws_iam_policy" "lm-iam-policy" {
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring    = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use

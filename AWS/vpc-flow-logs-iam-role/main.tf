@@ -10,6 +10,7 @@ resource "aws_iam_role" "vpc_flow_logs_role" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Internal    = var.Terraform
     Use         = var.Use
   }

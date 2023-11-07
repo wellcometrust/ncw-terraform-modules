@@ -6,6 +6,7 @@ resource "aws_iam_role" "aws-inspector-role" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use

@@ -18,6 +18,7 @@ resource "aws_cloudformation_stack" "lm_forwarder" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Use         = var.Use
     Terraform   = var.Terraform
   }

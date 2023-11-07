@@ -26,6 +26,7 @@ resource "aws_instance" "ec2-eip" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Internal      = var.Internal
+    Monitoring    = var.Monitoring
     Use           = var.Use
     BackUps       = var.BackUps
     Ansible       = var.Ansible

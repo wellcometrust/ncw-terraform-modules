@@ -36,3 +36,4 @@ variable "Division" {}
 variable "Environment" {}
 variable "Terraform" {}
 variable "Use" {}
+variable "Monitoring" {}
