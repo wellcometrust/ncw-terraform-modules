@@ -15,5 +15,6 @@ resource "aws_vpc" "prod" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }

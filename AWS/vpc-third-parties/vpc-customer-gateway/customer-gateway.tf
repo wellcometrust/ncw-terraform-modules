@@ -13,5 +13,6 @@ resource "aws_customer_gateway" "aws-third-party-infrastructure-gateway" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }

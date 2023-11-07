@@ -12,6 +12,7 @@ resource "aws_vpn_gateway" "aws-third-party-infrastructure-vpn" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -30,6 +31,7 @@ resource "aws_vpn_connection" "aws-third-party-infrastructure-vpn" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 

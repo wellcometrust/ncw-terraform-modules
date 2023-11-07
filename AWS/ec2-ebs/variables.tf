@@ -30,6 +30,7 @@ variable "Cost" {}
 variable "Department" {}
 variable "Division" {}
 variable "Environment" {}
+variable "Monitoring" {}
 variable "Terraform" {}
 variable "Use" {}
 variable "Ansible" {}

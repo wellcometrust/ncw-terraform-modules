@@ -6,5 +6,6 @@ variable "Environment" {}
 variable "Cost" {}
 variable "Division" {}
 variable "Department" {}
+variable "Monitoring" {}
 variable "Terraform" {}
 variable "Use"{}

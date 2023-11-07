@@ -32,6 +32,7 @@ resource "aws_db_instance" "rds-instance" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -49,5 +50,6 @@ resource "aws_db_subnet_group" "rds-subnet-group" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }

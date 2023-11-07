@@ -31,11 +31,8 @@ resource "aws_route_table" "prod" {
     Cost          = var.Cost
     Terraform     = var.Terraform
     Environment   = var.Environment
-    Internal      = var.Internal
     Use           = var.Use
-    BackUps       = var.BackUps
-    Ansible       = var.Ansible
-    PatchGroup    = var.PatchGroup
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -83,6 +80,7 @@ resource "aws_route_table" "private" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 

@@ -14,6 +14,7 @@ resource "aws_subnet" "prod_a" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -32,6 +33,7 @@ resource "aws_subnet" "prod_b" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -50,6 +52,7 @@ resource "aws_subnet" "prod_c" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -68,6 +71,7 @@ resource "aws_subnet" "prod_d" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }
 
@@ -107,5 +111,6 @@ resource "aws_network_acl" "aws-third-party-infrastructure-acl" {
     Terraform     = var.Terraform
     Environment   = var.Environment
     Use           = var.Use
+    Monitoring    = var.Monitoring
   }
 }

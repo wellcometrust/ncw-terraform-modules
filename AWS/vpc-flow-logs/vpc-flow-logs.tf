@@ -13,6 +13,7 @@ resource "aws_flow_log" "prod-vpc-flow-log" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Internal    = var.Terraform
     Use         = var.Use
   }

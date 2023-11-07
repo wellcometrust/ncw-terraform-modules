@@ -25,6 +25,7 @@ resource "aws_inspector_assessment_template" "inspector-assessment-template" {
     Department  = var.Department
     Division    = var.Division
     Environment    = var.Environment
+    Monitoring    = var.Monitoring
     Owner = var.Owner
     Terraform = var.Terraform
     Use = var.Use

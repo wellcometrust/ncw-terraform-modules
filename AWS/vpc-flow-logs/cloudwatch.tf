@@ -10,6 +10,7 @@ resource "aws_cloudwatch_log_group" "vpc-flow-log-group" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Internal    = var.Terraform
     Use         = var.Use
   }

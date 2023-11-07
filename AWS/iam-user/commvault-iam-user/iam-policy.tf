@@ -11,6 +11,7 @@ resource "aws_iam_policy" "commvault-iam-user-policy" {
     Cost        = var.cost-a281
     Division    = var.division
     Department  = var.department
+    Monitoring    = var.Monitoring
     Use         = var.use-commvault
   }
 }

@@ -9,6 +9,7 @@ resource "aws_iam_user" "commvault-rds-iam-user" {
     Cost        = var.cost-a281
     Division    = var.division
     Department  = var.department
+    Monitoring    = var.Monitoring
     Use         = var.use-commvault
   }
 }

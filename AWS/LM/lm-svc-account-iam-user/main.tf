@@ -9,6 +9,7 @@ resource "aws_iam_user" "logicmonitor-iam-user" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Use         = var.Use
   }
 }
@@ -26,6 +27,7 @@ resource "aws_iam_policy" "logicmonitor-iam-user-policy" {
     Cost        = var.Cost
     Division    = var.Division
     Department  = var.Department
+    Monitoring    = var.Monitoring
     Use         = var.Use
   }
 }

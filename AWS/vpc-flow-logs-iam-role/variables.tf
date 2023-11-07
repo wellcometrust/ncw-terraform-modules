@@ -6,3 +6,4 @@ variable "Division" {}
 variable "Department" {}
 variable "Terraform" {}
 variable "Use"{}
+variable "Monitoring" {}
