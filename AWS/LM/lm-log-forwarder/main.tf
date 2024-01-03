@@ -11,7 +11,7 @@ resource "aws_cloudformation_stack" "lm_forwarder" {
     PermissionsBoundaryArn = ""
     LogRetentionInDays = 90
   }
-  template_url = "https://lm-logs-forwarder-v2.s3.amazonaws.com/latest.yaml"
+  template_url = file("${path.module}/files/latest.yaml") # "https://lm-logs-forwarder-v2.s3.amazonaws.com/latest.yaml"
   tags = {
     Name        = "LMLogsForwarder"
     Owner       = var.Owner
