@@ -9,6 +9,7 @@ resource "aws_cloudformation_stack" "lm_forwarder" {
     LMCompanyName          = "wellcome"
     LMRegexScrub           = ""
     PermissionsBoundaryArn = ""
+    LogRetentionInDays = 90
   }
   template_url = file("${path.module}/files/latest.yaml")
   tags = {
