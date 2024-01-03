@@ -10,7 +10,7 @@ resource "aws_cloudformation_stack" "lm_forwarder" {
     LMRegexScrub           = ""
     PermissionsBoundaryArn = ""
   }
-  template_url = "https://lm-logs-forwarder-v2.s3.amazonaws.com/latest.yaml"
+  template_url = file("${path.module}/files/latest.yaml")
   tags = {
     Name        = "LMLogsForwarder"
     Owner       = var.Owner
