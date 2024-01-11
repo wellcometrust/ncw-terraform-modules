@@ -1,4 +1,4 @@
-# This role sets up logging to Cloudwatch for the MSSP
+# This role sets up logging to Cloudwatch for the MSSP and gives read access to EC2/ALB configuration"
 resource "aws_iam_role" "wt-panorama-instance-role" {
   assume_role_policy = file("${path.module}/policies/ec2-trust.json")
   description        = "IAM Instance Role, that sets up Cloudwatch Logging and MSSP and gives read access to EC2/ALB configuration"
