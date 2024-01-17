@@ -53,3 +53,26 @@ resource "aws_iam_role_policy_attachment" "amazon-ec2readonly-policy-attachment"
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
   role       = aws_iam_role.wt-panorama-instance-role.id
 }
+
+# Policy to extend the role to all AWS accounts
+resource "aws_iam_policy" "panorama-role-for-other-accounts-policy" {
+  policy      = file("${path.module}/policies/wt-panorama-policy.json")
+  description = "This policy allows Panorama instances to assume a role in other AWS accounts"
+  name        = "WT_Panorama-AssumeRole"
+  tags = {
+    Name        = "WT_Panorama-AssumeRole"
+    Owner       = var.owner
+    Terraform   = var.terraform
+    Environment = "All"
+    Cost        = var.cost-a281
+    Division    = var.division
+    Department  = var.department
+    Monitoring  = var.Monitoring
+    Use         = var.use-palo
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "panorama-role-for-other-accounts-policy-attachment" {
+  policy_arn = aws_iam_policy.panorama-role-for-other-accounts-policy.arn
+  role       = aws_iam_role.wt-panorama-instance-role.id
+}
