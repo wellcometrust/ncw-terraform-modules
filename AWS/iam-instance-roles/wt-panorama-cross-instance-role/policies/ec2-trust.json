@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Sid": "TrustPolicy",
+          "Effect": "Allow",
+          "Action": "sts:AssumeRole",
+          "Principal": {"AWS": "arn:aws:iam::205349831532:role/WT_Panorama_Instance_Role"}
+      }
+  ]
+}
