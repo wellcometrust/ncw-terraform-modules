@@ -35,6 +35,6 @@ variable "use-palo" {
 }
 
 variable "cost-a281" {
-  description = "NCW Cost Centre (Sam Horsman)"
+  description = "NCW Cost Centre"
   default     = "A281"
 }
