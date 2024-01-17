@@ -9,6 +9,7 @@ resource "aws_iam_role" "wt-panorama-cross-account-instance-role" {
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring  = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use
@@ -24,6 +25,7 @@ resource "aws_iam_instance_profile" "wt-panorama-cross-account-instance-profile"
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring  = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use

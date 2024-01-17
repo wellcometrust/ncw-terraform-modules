@@ -9,6 +9,7 @@ resource "aws_iam_role" "wt-panorama-instance-role" {
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring  = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use
@@ -24,6 +25,7 @@ resource "aws_iam_instance_profile" "wt-panorama-instance-profile" {
     Department  = var.Department
     Division    = var.Division
     Environment = var.Environment
+    Monitoring  = var.Monitoring
     Owner       = var.Owner
     Terraform   = var.Terraform
     Use         = var.Use
@@ -61,14 +63,14 @@ resource "aws_iam_policy" "panorama-role-for-other-accounts-policy" {
   name        = "WT_Panorama-AssumeRole"
   tags = {
     Name        = "WT_Panorama-AssumeRole"
-    Owner       = var.owner
-    Terraform   = var.terraform
-    Environment = "All"
-    Cost        = var.cost-a281
-    Division    = var.division
-    Department  = var.department
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment = var.Environment
     Monitoring  = var.Monitoring
-    Use         = var.use-palo
+    Owner       = var.Owner
+    Terraform   = var.Terraform
+    Use         = var.Use
   }
 }
 
