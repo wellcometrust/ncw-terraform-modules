@@ -6,18 +6,18 @@
         "Effect": "Allow",
         "Action": "sts:AssumeRole",
         "Resource": [
-            "arn:aws:iam::705284639245:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::066453737909:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::250790015188:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::254378162594:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::393607018753:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::600392747173:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::142276723405:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::205349831532:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::545526813606:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::715154568423:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::267269328833:role/WT_Panorama_Instance_Role",
-            "arn:aws:iam::853012140110:role/WT_Panorama_Instance_Role"
+            "arn:aws:iam::705284639245:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::066453737909:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::250790015188:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::254378162594:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::393607018753:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::600392747173:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::142276723405:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::205349831532:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::545526813606:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::715154568423:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::267269328833:role/WT_Panorama_Cross_Account_Instance_Role",
+            "arn:aws:iam::853012140110:role/WT_Panorama_Cross_Account_Instance_Role"
         ]
       }
     ]
