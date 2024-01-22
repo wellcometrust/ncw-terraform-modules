@@ -16,21 +16,21 @@ resource "aws_iam_role" "wt-panorama-cross-account-instance-role" {
   }
 }
 
-# resource "aws_iam_instance_profile" "wt-panorama-cross-account-instance-profile" {
-#   name = "WT_Panorama_Instance_Role"
-#   role = aws_iam_role.wt-panorama-cross-account-instance-role.name
-#   tags = {
-#     Name        = "WT_Panorama_Cross_Account_Instance_Profile"
-#     Cost        = var.Cost
-#     Department  = var.Department
-#     Division    = var.Division
-#     Environment = var.Environment
-#     Monitoring  = var.Monitoring
-#     Owner       = var.Owner
-#     Terraform   = var.Terraform
-#     Use         = var.Use
-#   }
-# }
+resource "aws_iam_instance_profile" "wt-panorama-cross-account-instance-profile" {
+  name = "WT_Panorama_Instance_Role"
+  role = aws_iam_role.wt-panorama-cross-account-instance-role.name
+  tags = {
+    Name        = "WT_Panorama_Cross_Account_Instance_Profile"
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment = var.Environment
+    Monitoring  = var.Monitoring
+    Owner       = var.Owner
+    Terraform   = var.Terraform
+    Use         = var.Use
+  }
+}
 
 # Policy attachment for SSM
 resource "aws_iam_role_policy_attachment" "amazon-ecs-role-for-ssm-attachnment" {
