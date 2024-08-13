@@ -48,6 +48,7 @@
         "ec2:DescribeVolumeAttribute",
         "ec2:DescribeVolumes",
         "ec2:DescribeVolumesModifications",
+        "ec2:DescribeVpcAttribute",
         "ec2:DescribeVpcEndpoints",
         "ec2:DescribeVpcs",
         "ec2:DetachNetworkInterface",
