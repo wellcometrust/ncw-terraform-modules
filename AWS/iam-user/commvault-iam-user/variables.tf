@@ -23,7 +23,7 @@ variable "use-commvault" {
   default     = "Commvault"
 }
 
-variable "cost-a281" {
+variable "cost-39111035" {
   description = "Sams Cost Centre"
   default     = "A281"
 }
