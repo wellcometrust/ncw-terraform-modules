@@ -23,9 +23,9 @@ variable "use-commvault" {
   default     = "Commvault"
 }
 
-variable "cost-a281" {
-  description = "Sams Cost Centre"
-  default     = "A281"
+variable "cost-39111035" {
+  description = "NCW Cost Centre (Sam Horsman)"
+  default     = "39111035" // previously A281
 }
 
 variable "iam-user-name" {}

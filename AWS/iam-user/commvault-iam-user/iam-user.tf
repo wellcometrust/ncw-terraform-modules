@@ -6,7 +6,7 @@ resource "aws_iam_user" "comvault-iam-user" {
     Owner       = var.owner
     Terraform     = var.terraform
     Environment = "All"
-    Cost        = var.cost-a281
+    Cost        = var.cost-39111035
     Division    = var.division
     Department  = var.department
     Monitoring    = var.Monitoring

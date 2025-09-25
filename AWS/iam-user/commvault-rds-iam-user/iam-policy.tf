@@ -6,12 +6,12 @@ resource "aws_iam_policy" "commvault-rds-iam-user-policy" {
   tags = {
     Name        = var.iam-user-name
     Owner       = var.owner
-    Terraform     = var.terraform
+    Terraform   = var.terraform
     Environment = "All"
-    Cost        = var.cost-a281
+    Cost        = var.cost-39111035
     Division    = var.division
     Department  = var.department
-    Monitoring    = var.Monitoring
+    Monitoring  = var.Monitoring
     Use         = var.use-commvault
   }
 }
