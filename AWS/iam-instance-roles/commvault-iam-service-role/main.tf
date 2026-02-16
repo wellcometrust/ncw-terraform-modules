@@ -106,3 +106,24 @@ resource "aws_iam_role_policy_attachment" "amazon-ssm-managed-instance-core-atta
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.wt-commvault-role.name
 }
+
+resource "aws_iam_policy" "wt-commvault-s3-immutable-role-policy" {
+  policy = file("${path.module}/policies/commvault-s3-immutable-policy.json")
+  name   = "WT_Commvault_S3_Immutable_Role_Policy"
+  tags = {
+    Name        = "WT_Commvault_S3_Immutable_Role_Policy"
+    Cost        = var.Cost
+    Department  = var.Department
+    Division    = var.Division
+    Environment    = var.Environment
+    Monitoring    = var.Monitoring
+    Owner = var.Owner
+    Terraform = var.Terraform
+    Use = var.Use
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "wt-commvault-policy-attachement-4" {
+  policy_arn = aws_iam_policy.wt-commvault-s3-immutable-role-policy.arn
+  role       = aws_iam_role.wt-commvault-role.name
+}
