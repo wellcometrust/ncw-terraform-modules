@@ -9,7 +9,7 @@ variable "aws_account_id" {
 }
 
 variable "repo_name" {
-  description = "Name of the infra repo this scanner is being run against (e.g. 'ncw-dev-infra')."
+  description = "Name of the infra repo this scanner is being run against (e.g. 'my-infra-repo')."
   type        = string
 }
 

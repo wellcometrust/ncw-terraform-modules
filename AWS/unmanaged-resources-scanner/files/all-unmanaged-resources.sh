@@ -4,7 +4,7 @@
 #
 # Runs the unmanaged-resources scanners. By default it runs BOTH:
 #   - check-unmanaged-resources.sh  (generic; works in any AWS account)
-#   - scan-unmanaged-resources.sh   (account-specific to 600392747173)
+#   - scan-unmanaged-resources.sh   (optional account-specific scanner)
 #
 # Usage:
 #   ./all-unmanaged-resources.sh [args]
@@ -14,9 +14,11 @@
 #     --profile ...  # AWS profile to use
 #     --region ...   # AWS region (repeatable; passed through)
 #     --dir <path>   # Terraform stack directory (passed to check script)
+#     --account <id> # AWS account ID for the scan-only script
+#     --setup <path> # Path to your setup/login script
 #
 # Requirements: scripts present in the same directory as this wrapper, and the
-# user already logged in to AWS (e.g. via aws/scripts/setup.sh).
+# user already logged in to AWS (e.g. via `aws sso login`).
 # =============================================================================
 
 set -euo pipefail
@@ -32,6 +34,10 @@ RUN_CHECK=true
 RUN_SCAN=true
 ARGS=()
 expect_profile=false
+expect_account=false
+expect_setup=false
+ACCOUNT_ID="${ACCOUNT_ID:-}"
+SETUP_SCRIPT="${SETUP_SCRIPT:-}"
 
 for arg in "$@"; do
   if $expect_profile; then
@@ -40,14 +46,52 @@ for arg in "$@"; do
     expect_profile=false
     continue
   fi
+  if $expect_account; then
+    ACCOUNT_ID="$arg"
+    expect_account=false
+    continue
+  fi
+  if $expect_setup; then
+    SETUP_SCRIPT="$arg"
+    expect_setup=false
+    continue
+  fi
   case "$arg" in
     --json)       CHECK_JSON=true ;;
     --check-only) RUN_SCAN=false ;;
     --scan-only)  RUN_CHECK=false ;;
     --profile)    ARGS+=("$arg"); expect_profile=true ;;
+    --account)    expect_account=true ;;
+    --setup)      expect_setup=true ;;
     *)            ARGS+=("$arg") ;;
   esac
 done
+
+# --- Interactive prompts (only when not supplied via flags or env vars) --------
+# When run via Terraform local-exec, ACCOUNT_ID and SETUP_SCRIPT are set as
+# environment variables. When run manually without flags, the user gets prompted.
+
+if [[ -z "${ACCOUNT_ID:-}" ]]; then
+  if [[ -t 0 ]]; then
+    read -rp "[INPUT] Enter the AWS account ID for this scan: " ACCOUNT_ID
+    [[ -z "$ACCOUNT_ID" ]] && { echo "[ERR] Account ID cannot be empty." >&2; exit 1; }
+  else
+    echo "[ERR] ACCOUNT_ID not set and no interactive terminal available." >&2
+    echo "[ERR] Pass --account <id> or set the ACCOUNT_ID environment variable." >&2
+    exit 1
+  fi
+fi
+
+if [[ -z "${SETUP_SCRIPT:-}" ]]; then
+  if [[ -t 0 ]]; then
+    read -rp "[INPUT] Enter the path to your setup/login script (or press Enter to skip): " SETUP_SCRIPT
+  fi
+fi
+
+export ACCOUNT_ID
+SETUP_SCRIPT="${SETUP_SCRIPT:-}"
+echo "[INFO] Target AWS account: $ACCOUNT_ID"
+[[ -n "$SETUP_SCRIPT" ]] && echo "[INFO] Setup script: $SETUP_SCRIPT"
 
 # Validate selected scripts exist & are executable
 if $RUN_CHECK && [[ ! -x "$CHECK_SCRIPT" ]]; then
@@ -67,7 +111,9 @@ if ! aws sts get-caller-identity --output json >/dev/null 2>&1; then
   echo "[ERR] Unable to authenticate to AWS with profile '$AWS_PROFILE'." >&2
   echo "[ERR] Log in first using your usual SSO flow, e.g.:" >&2
   echo "[ERR]   aws sso login --profile $AWS_PROFILE" >&2
-  echo "[ERR] Or (for this repo's NCW dev account): ./aws/scripts/setup.sh" >&2
+  if [[ -n "$SETUP_SCRIPT" ]]; then
+    echo "[ERR] Or run your setup script: $SETUP_SCRIPT" >&2
+  fi
   exit 1
 fi
 echo "[INFO] AWS credentials verified."
@@ -85,7 +131,7 @@ fi
 if $RUN_SCAN; then
   echo ""
   echo "===== Running scan-unmanaged-resources.sh ====="
-  echo "[WARN] scan-unmanaged-resources.sh is hardcoded for AWS account 600392747173."
+  echo "[WARN] scan-unmanaged-resources.sh is hardcoded for AWS account $ACCOUNT_ID."
   echo "[WARN] If you are running this in a different account, use --check-only instead."
   "$SCAN_SCRIPT" ${ARGS[@]+"${ARGS[@]}"} | tee scan-unmanaged-output.md
 fi
