@@ -13,6 +13,11 @@ output "check_script_path" {
   value       = local.check_script
 }
 
+output "scan_script_path" {
+  description = "Absolute path to the scan-unmanaged-resources.sh script."
+  value       = local.scan_script
+}
+
 output "run_command" {
   description = "Ready-to-copy shell command to invoke the scanner with the configured flags."
   value       = trimspace("${local.wrapper} ${local.invocation_args_str}")

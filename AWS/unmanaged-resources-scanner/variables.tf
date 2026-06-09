@@ -5,7 +5,7 @@ variable "run_on_apply" {
 }
 
 variable "mode" {
-  description = "Which scanner(s) to run when run_on_apply = true. One of: check-only, scan-only, all."
+  description = "Which scanner(s) to run when run_on_apply = true. One of: check-only, scan-only, all. Use 'check-only' for the portable scanner that works in any account."
   type        = string
   default     = "check-only"
   validation {
@@ -62,3 +62,27 @@ variable "triggers" {
   default     = {}
 }
 
+variable "slack_enabled" {
+  description = "If true (default), the check script will try to send a Slack notification using `slack_webhook_url` from the Terraform stack's terraform.tfvars (or $SLACK_WEBHOOK_URL). Set to false to suppress Slack entirely."
+  type        = bool
+  default     = true
+}
+
+variable "slack_webhook_url" {
+  description = "Optional Slack webhook URL to send the report to. Overrides any `slack_webhook_url` found in the stack's terraform.tfvars. Leave empty to use the tfvars value or disable Slack."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "account_id" {
+  description = "AWS account ID passed to the wrapper script. When run via Terraform this avoids interactive prompts. When running the script manually, omit this and you will be prompted."
+  type        = string
+  default     = ""
+}
+
+variable "setup_script" {
+  description = "Path to a setup/login script shown in error messages when authentication fails. When run via Terraform this avoids interactive prompts. When running the script manually, omit this and you will be prompted."
+  type        = string
+  default     = ""
+}

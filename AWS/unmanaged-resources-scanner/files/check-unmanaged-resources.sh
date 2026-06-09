@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
 # =============================================================================
 # check-unmanaged-resources.sh
-#
+
 # Generic, portable drift / unmanaged-resources scanner for any of our
 # AWS infrastructure account repos.
-#
+
 # It performs NO hardcoding of account IDs, profile names, regions, bucket
 # names or resource names. Everything is discovered at runtime from:
-#
+
 #   1. The Terraform configuration in the target directory (provider profile,
 #      backend, region variables).
 #   2. The Terraform remote state (resources that ARE managed).
 #   3. STS get-caller-identity (account currently authenticated).
 #   4. The AWS CLI (resources that EXIST in the account).
-#
+
 # It then prints / writes a report of every AWS resource it can see in the
 # account that is NOT tracked in the remote state file.
-#
+
 # No credentials, secrets or account-specific identifiers are embedded.
-#
+
 # Usage:
 #   ./check-unmanaged-resources.sh                       # use ./aws or .
 #   ./check-unmanaged-resources.sh --dir ../aws
 #   ./check-unmanaged-resources.sh --profile my-profile
 #   ./check-unmanaged-resources.sh --region eu-west-1 --region eu-west-2
 #   ./check-unmanaged-resources.sh --json                # JSON instead of MD
-#
+
 # Requirements: terraform >= 1.x, aws CLI v2, jq
 # =============================================================================
 
@@ -55,6 +55,8 @@ IGNORE_PATTERNS=(
   "Key Pair"
   "org-level"
   "stacksets"
+  "QuickSetup"
+  "quicksetup"
 )
 
 usage() {
@@ -240,6 +242,45 @@ info "Distinct managed identifiers extracted: $MANAGED_COUNT"
 # every candidate and works on bash 3.2 (macOS) which lacks `declare -A`.
 MANAGED_BLOB=$'\n'"$(cat "$MANAGED_IDS")"$'\n'
 
+# -----------------------------------------------------------------------------
+# CloudFormation: anything provisioned via a CFN stack is "managed" by AWS
+# (not by us / not by Terraform), so append every PhysicalResourceId of every
+# active stack across the scanned regions to the managed set.
+
+# This means:
+#   * StackSets-created resources (which AWS tags with aws:cloudformation:*)
+#     no longer show up as unmanaged.
+#   * Per-account stacks (e.g. SecurityHub, GuardDuty defaults, Config
+#     recorders) are filtered out automatically.
+# -----------------------------------------------------------------------------
+section "Reading CloudFormation stack resources"
+CFN_IDS_FILE="$(mktemp)"
+trap 'rm -f "$TF_JSON" "$MANAGED_IDS" "$CFN_IDS_FILE"' EXIT
+
+# We don't know which regions to walk for CFN until later (REGIONS array is
+# already populated above). Build a deduped set of all PhysicalResourceIds.
+CFN_STACK_COUNT=0
+for R in "${REGIONS[@]}"; do
+  while IFS= read -r stack; do
+    [[ -z "$stack" || "$stack" == "None" ]] && continue
+    CFN_STACK_COUNT=$((CFN_STACK_COUNT + 1))
+    aws_safe cloudformation list-stack-resources --region "$R" --stack-name "$stack" \
+      --query "StackResourceSummaries[].PhysicalResourceId" --output json \
+      | jq -r '.[]?' >> "$CFN_IDS_FILE"
+  done < <(aws_safe cloudformation list-stacks --region "$R" \
+    --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE IMPORT_COMPLETE \
+    --query "StackSummaries[].StackName" --output json | jq -r '.[]?')
+done
+
+CFN_IDS_COUNT=$(sort -u "$CFN_IDS_FILE" | grep -cv '^$' || true)
+info "CloudFormation stacks scanned: $CFN_STACK_COUNT"
+info "Distinct CloudFormation-managed identifiers: $CFN_IDS_COUNT"
+
+# Append CFN PhysicalResourceIds to MANAGED_BLOB so is_managed() picks them up.
+if [[ "$CFN_IDS_COUNT" -gt 0 ]]; then
+  MANAGED_BLOB+="$(sort -u "$CFN_IDS_FILE")"$'\n'
+fi
+
 # Membership test: returns 0 if ANY of the provided candidate strings is
 # present (exact line match) in the managed-id set.
 is_managed() {
@@ -311,7 +352,7 @@ start_table() {
 }
 
 # (TSV output from jq is unquoted/tab-separated, so no per-field stripping
-# is required — fields are read directly via `IFS=$'\t' read -r ...`.)
+# is required — fields are read directly via `IFS='|' read -r ...`.)
 
 # -----------------------------------------------------------------------------
 # Scanners (only "name-able", customer-mutable resources – we deliberately
@@ -333,40 +374,40 @@ scan_region() {
 
   # ----- EC2 instances ----------------------------------------------------
   start_table "EC2 Instances ($R)"
-  while IFS=, read -r id name state itype; do
+  while IFS='|' read -r id name state itype; do
     [[ -z "$id" || "$state" == "terminated" ]] && continue
     if ! is_managed "$id" "$name"; then
       record "EC2 Instance" "$R" "$id" "Name=$name State=$state Type=$itype"
     fi
   done < <(aws_safe ec2 describe-instances --region "$R" \
     --query "Reservations[].Instances[].[InstanceId,Tags[?Key=='Name']|[0].Value,State.Name,InstanceType]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Security groups (non-default) -----------------------------------
   start_table "Security Groups ($R)"
-  while IFS=, read -r sgid sgname vpcid; do
+  while IFS='|' read -r sgid sgname vpcid; do
     [[ -z "$sgid" || "$sgname" == "default" ]] && continue
     [[ -n "$DEFAULT_VPC" && "$vpcid" == "$DEFAULT_VPC" ]] && continue
     if ! is_managed "$sgid" "$sgname"; then
       record "Security Group" "$R" "$sgid" "Name=$sgname VPC=$vpcid"
     fi
   done < <(aws_safe ec2 describe-security-groups --region "$R" \
-    --query "SecurityGroups[].[GroupId,GroupName,VpcId]" --output json | jq -r '.[] | @csv')
+    --query "SecurityGroups[].[GroupId,GroupName,VpcId]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- VPCs (non-default) ----------------------------------------------
   start_table "VPCs ($R)"
-  while IFS=, read -r vpcid vname cidr isdef; do
+  while IFS='|' read -r vpcid vname cidr isdef; do
     [[ -z "$vpcid" || "$isdef" == "true" ]] && continue
     if ! is_managed "$vpcid" "$vname"; then
       record "VPC" "$R" "$vpcid" "Name=$vname CIDR=$cidr"
     fi
   done < <(aws_safe ec2 describe-vpcs --region "$R" \
     --query "Vpcs[].[VpcId,Tags[?Key=='Name']|[0].Value,CidrBlock,IsDefault]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Subnets ----------------------------------------------------------
   start_table "Subnets ($R)"
-  while IFS=, read -r snid snname cidr vpcid; do
+  while IFS='|' read -r snid snname cidr vpcid; do
     [[ -z "$snid" ]] && continue
     [[ -n "$DEFAULT_VPC" && "$vpcid" == "$DEFAULT_VPC" ]] && continue
     if ! is_managed "$snid" "$snname"; then
@@ -374,11 +415,11 @@ scan_region() {
     fi
   done < <(aws_safe ec2 describe-subnets --region "$R" \
     --query "Subnets[].[SubnetId,Tags[?Key=='Name']|[0].Value,CidrBlock,VpcId]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Route tables -----------------------------------------------------
       start_table "Route Tables ($R)"
-      while IFS=, read -r rtid rtname vpcid main; do
+      while IFS='|' read -r rtid rtname vpcid main; do
         [[ -z "$rtid" ]] && continue
         [[ -n "$DEFAULT_VPC" && "$vpcid" == "$DEFAULT_VPC" ]] && continue
         [[ "$main" == "true" ]] && continue  # Exclude Main=yes route tables
@@ -387,11 +428,11 @@ scan_region() {
         fi
       done < <(aws_safe ec2 describe-route-tables --region "$R" \
         --query "RouteTables[].[RouteTableId,Tags[?Key=='Name']|[0].Value,VpcId,Associations]" \
-                --output json | jq -r '.[] | [ (.[0] // ""), (.[1] // ""), (.[2] // ""), ( (.[3] // []) | if type=="array" then (.[0].Main // "") else "" end ) ] | map(tostring) | @csv')
+                --output json | jq -r '.[] | [ (.[0] // ""), (.[1] // ""), (.[2] // ""), ( (.[3] // []) | if type=="array" then (.[0].Main // "") else "" end ) ] | map(tostring) | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Internet gateways -----------------------------------------------
   start_table "Internet Gateways ($R)"
-  while IFS=, read -r igid igname attvpc; do
+  while IFS='|' read -r igid igname attvpc; do
     [[ -z "$igid" ]] && continue
     [[ -n "$DEFAULT_VPC" && "$attvpc" == "$DEFAULT_VPC" ]] && continue
     if ! is_managed "$igid" "$igname"; then
@@ -399,11 +440,11 @@ scan_region() {
     fi
   done < <(aws_safe ec2 describe-internet-gateways --region "$R" \
     --query "InternetGateways[].[InternetGatewayId,Tags[?Key=='Name']|[0].Value,Attachments[0].VpcId]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Network ACLs (non-default) --------------------------------------
   start_table "Network ACLs ($R)"
-  while IFS=, read -r nid nname vpcid isdef; do
+  while IFS='|' read -r nid nname vpcid isdef; do
     [[ -z "$nid" || "$isdef" == "true" ]] && continue
     [[ -n "$DEFAULT_VPC" && "$vpcid" == "$DEFAULT_VPC" ]] && continue
     if ! is_managed "$nid" "$nname"; then
@@ -411,22 +452,22 @@ scan_region() {
     fi
   done < <(aws_safe ec2 describe-network-acls --region "$R" \
     --query "NetworkAcls[].[NetworkAclId,Tags[?Key=='Name']|[0].Value,VpcId,IsDefault]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- VPC endpoints ----------------------------------------------------
   start_table "VPC Endpoints ($R)"
-  while IFS=, read -r eid ename svc vpcid; do
+  while IFS='|' read -r eid ename svc vpcid; do
     [[ -z "$eid" ]] && continue
     if ! is_managed "$eid" "$ename"; then
       record "VPC Endpoint" "$R" "$eid" "Name=$ename Service=$svc VPC=$vpcid"
     fi
   done < <(aws_safe ec2 describe-vpc-endpoints --region "$R" \
     --query "VpcEndpoints[?State!='deleted'].[VpcEndpointId,Tags[?Key=='Name']|[0].Value,ServiceName,VpcId]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- EBS volumes (named only; root vols unnamed) ---------------------
   start_table "EBS Volumes ($R)"
-  while IFS=, read -r vid vname vstate vsize vtype; do
+  while IFS='|' read -r vid vname vstate vsize vtype; do
     [[ -z "$vid" || -z "$vname" || "$vname" == "null" ]] && continue
     if ! is_managed "$vid" "$vname"; then
       record "EBS Volume" "$R" "$vid" "Name=$vname State=$vstate Size=${vsize}GB Type=$vtype"
@@ -434,39 +475,39 @@ scan_region() {
   done < <(aws_safe ec2 describe-volumes --region "$R" \
     --filters "Name=status,Values=in-use,available" \
     --query "Volumes[].[VolumeId,Tags[?Key=='Name']|[0].Value,State,Size,VolumeType]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Elastic IPs ------------------------------------------------------
   start_table "Elastic IPs ($R)"
-  while IFS=, read -r alloc eip ename assoc; do
+  while IFS='|' read -r alloc eip ename assoc; do
     [[ -z "$alloc" ]] && continue
     if ! is_managed "$alloc" "$eip" "$ename"; then
       record "Elastic IP" "$R" "$eip" "AllocationId=$alloc Name=$ename Assoc=${assoc:-none}"
     fi
   done < <(aws_safe ec2 describe-addresses --region "$R" \
     --query "Addresses[].[AllocationId,PublicIp,Tags[?Key=='Name']|[0].Value,AssociationId]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Key pairs --------------------------------------------------------
   start_table "Key Pairs ($R)"
-  while IFS=, read -r kname ktype kcreated; do
+  while IFS='|' read -r kname ktype kcreated; do
     [[ -z "$kname" ]] && continue
     if ! is_managed "$kname"; then
       record "Key Pair" "$R" "$kname" "Type=$ktype Created=$kcreated"
     fi
   done < <(aws_safe ec2 describe-key-pairs --region "$R" \
-    --query "KeyPairs[].[KeyName,KeyType,CreateTime]" --output json | jq -r '.[] | @csv')
+    --query "KeyPairs[].[KeyName,KeyType,CreateTime]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Load balancers (ALB/NLB + classic) ------------------------------
   start_table "Load Balancers ($R)"
-  while IFS=, read -r lbname lbarn lbtype lbstate; do
+  while IFS='|' read -r lbname lbarn lbtype lbstate; do
     [[ -z "$lbname" ]] && continue
     if ! is_managed "$lbarn" "$lbname"; then
       record "Load Balancer" "$R" "$lbname" "Type=$lbtype State=$lbstate"
     fi
   done < <(aws_safe elbv2 describe-load-balancers --region "$R" \
     --query "LoadBalancers[].[LoadBalancerName,LoadBalancerArn,Type,State.Code]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
   while read -r clb; do
     [[ -z "$clb" ]] && continue
     if ! is_managed "$clb"; then
@@ -477,67 +518,67 @@ scan_region() {
 
   # ----- KMS aliases (skip alias/aws/*) ----------------------------------
   start_table "KMS Keys ($R)"
-  while IFS=, read -r alias keyid; do
+  while IFS='|' read -r alias keyid; do
     [[ -z "$alias" ]] && continue
     if ! is_managed "$alias" "$keyid"; then
       record "KMS Key" "$R" "$alias" "KeyId=$keyid"
     fi
   done < <(aws_safe kms list-aliases --region "$R" \
     --query "Aliases[?starts_with(AliasName,'alias/') && !starts_with(AliasName,'alias/aws/')].[AliasName,TargetKeyId]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- CloudWatch log groups (skip /aws/*) -----------------------------
   start_table "CloudWatch Log Groups ($R)"
-  while IFS=, read -r lg ret; do
+  while IFS='|' read -r lg ret; do
     [[ -z "$lg" ]] && continue
     [[ "$lg" == /aws/* ]] && continue
     if ! is_managed "$lg"; then
       record "Log Group" "$R" "$lg" "Retention=${ret:-Never}"
     fi
   done < <(aws_safe logs describe-log-groups --region "$R" \
-    --query "logGroups[].[logGroupName,retentionInDays]" --output json | jq -r '.[] | @csv')
+    --query "logGroups[].[logGroupName,retentionInDays]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- SSM parameters (skip /aws/*) ------------------------------------
   start_table "SSM Parameters ($R)"
-  while IFS=, read -r pn pt pmod; do
+  while IFS='|' read -r pn pt pmod; do
     [[ -z "$pn" ]] && continue
     [[ "$pn" == /aws/* ]] && continue
     if ! is_managed "$pn"; then
       record "SSM Param" "$R" "$pn" "Type=$pt LastModified=$pmod"
     fi
   done < <(aws_safe ssm describe-parameters --region "$R" \
-    --query "Parameters[].[Name,Type,LastModifiedDate]" --output json | jq -r '.[] | @csv')
+    --query "Parameters[].[Name,Type,LastModifiedDate]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Scheduler schedules ---------------------------------------------
   start_table "EventBridge Scheduler Schedules ($R)"
-  while IFS=, read -r sn sg sst; do
+  while IFS='|' read -r sn sg sst; do
     [[ -z "$sn" ]] && continue
     if ! is_managed "$sn"; then
       record "Schedule" "$R" "$sn" "Group=$sg State=$sst"
     fi
   done < <(aws_safe scheduler list-schedules --region "$R" \
-    --query "Schedules[].[Name,GroupName,State]" --output json | jq -r '.[]? | @csv')
+    --query "Schedules[].[Name,GroupName,State]" --output json | jq -r '.[]? | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- Lambda functions -------------------------------------------------
   start_table "Lambda Functions ($R)"
-  while IFS=, read -r fn rt mod; do
+  while IFS='|' read -r fn rt mod; do
     [[ -z "$fn" ]] && continue
     if ! is_managed "$fn"; then
       record "Lambda" "$R" "$fn" "Runtime=$rt LastModified=$mod"
     fi
   done < <(aws_safe lambda list-functions --region "$R" \
-    --query "Functions[].[FunctionName,Runtime,LastModified]" --output json | jq -r '.[] | @csv')
+    --query "Functions[].[FunctionName,Runtime,LastModified]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- RDS instances ----------------------------------------------------
   start_table "RDS Instances ($R)"
-  while IFS=, read -r dbid dbc eng st; do
+  while IFS='|' read -r dbid dbc eng st; do
     [[ -z "$dbid" ]] && continue
     if ! is_managed "$dbid"; then
       record "RDS" "$R" "$dbid" "Class=$dbc Engine=$eng Status=$st"
     fi
   done < <(aws_safe rds describe-db-instances --region "$R" \
     --query "DBInstances[].[DBInstanceIdentifier,DBInstanceClass,Engine,DBInstanceStatus]" \
-    --output json | jq -r '.[] | @csv')
+    --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- SNS topics -------------------------------------------------------
   start_table "SNS Topics ($R)"
@@ -563,23 +604,23 @@ scan_region() {
 
   # ----- Secrets Manager (names only; never dump values) -----------------
   start_table "Secrets Manager ($R)"
-  while IFS=, read -r sn sarn smod; do
+  while IFS='|' read -r sn sarn smod; do
     [[ -z "$sn" ]] && continue
     if ! is_managed "$sn" "$sarn"; then
       record "Secret" "$R" "$sn" "LastChanged=$smod"
     fi
   done < <(aws_safe secretsmanager list-secrets --region "$R" \
-    --query "SecretList[].[Name,ARN,LastChangedDate]" --output json | jq -r '.[] | @csv')
+    --query "SecretList[].[Name,ARN,LastChangedDate]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- ECR --------------------------------------------------------------
   start_table "ECR Repositories ($R)"
-  while IFS=, read -r rn ru; do
+  while IFS='|' read -r rn ru; do
     [[ -z "$rn" ]] && continue
     if ! is_managed "$rn" "$ru"; then
       record "ECR Repo" "$R" "$rn" "URI=$ru"
     fi
   done < <(aws_safe ecr describe-repositories --region "$R" \
-    --query "repositories[].[repositoryName,repositoryUri]" --output json | jq -r '.[]? | @csv')
+    --query "repositories[].[repositoryName,repositoryUri]" --output json | jq -r '.[]? | map(if . == null then "" else tostring end) | join("|")')
 
   # ----- ECS clusters -----------------------------------------------------
   start_table "ECS Clusters ($R)"
@@ -610,7 +651,7 @@ scan_global() {
   done < <(aws_safe s3api list-buckets --query "Buckets[].Name" --output json | jq -r '.[]?')
 
   start_table "IAM Roles (customer)"
-  while IFS=, read -r rn rc; do
+  while IFS='|' read -r rn rc; do
     [[ -z "$rn" ]] && continue
     # Skip AWS service-linked / reserved roles
     [[ "$rn" == AWS* || "$rn" == aws-* || "$rn" == AWSReserved* ]] && continue
@@ -620,15 +661,15 @@ scan_global() {
     if ! is_managed "$rn"; then
       record "IAM Role" "global" "$rn" "Created=$rc"
     fi
-  done < <(aws_safe iam list-roles --query "Roles[].[RoleName,CreateDate]" --output json | jq -r '.[] | @csv')
+  done < <(aws_safe iam list-roles --query "Roles[].[RoleName,CreateDate]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   start_table "IAM Users"
-  while IFS=, read -r un uc; do
+  while IFS='|' read -r un uc; do
     [[ -z "$un" ]] && continue
     if ! is_managed "$un"; then
       record "IAM User" "global" "$un" "Created=$uc"
     fi
-  done < <(aws_safe iam list-users --query "Users[].[UserName,CreateDate]" --output json | jq -r '.[] | @csv')
+  done < <(aws_safe iam list-users --query "Users[].[UserName,CreateDate]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   start_table "IAM Groups"
   while read -r gn; do
@@ -639,23 +680,23 @@ scan_global() {
   done < <(aws_safe iam list-groups --query "Groups[].GroupName" --output json | jq -r '.[]?')
 
   start_table "IAM Policies (customer-managed)"
-  while IFS=, read -r pn parn pc; do
+  while IFS='|' read -r pn parn pc; do
     [[ -z "$pn" ]] && continue
     if ! is_managed "$pn" "$parn"; then
       record "IAM Policy" "global" "$pn" "ARN=$parn Created=$pc"
     fi
   done < <(aws_safe iam list-policies --scope Local \
-    --query "Policies[].[PolicyName,Arn,CreateDate]" --output json | jq -r '.[] | @csv')
+    --query "Policies[].[PolicyName,Arn,CreateDate]" --output json | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 
   start_table "CloudTrail Trails"
-  while IFS=, read -r tn tb tm; do
+  while IFS='|' read -r tn tb tm; do
     [[ -z "$tn" ]] && continue
     if ! is_managed "$tn"; then
       record "CloudTrail" "global" "$tn" "Bucket=$tb MultiRegion=$tm"
     fi
   done < <(aws_safe cloudtrail describe-trails --include-shadow-trails \
     --query "trailList[].[Name,S3BucketName,IsMultiRegionTrail]" --output json \
-    | jq -r '.[] | @csv')
+    | jq -r '.[] | map(if . == null then "" else tostring end) | join("|")')
 }
 
 # -----------------------------------------------------------------------------
@@ -704,12 +745,43 @@ info "Total unmanaged resources: $COUNT"
 if $OUT_JSON; then cat "$REPORT_JSON"; fi
 
 # -----------------------------------------------------------------------------
-# Slack integration: send report to Slack if configured
+# Slack integration: send report to Slack if configured.
+
+# The webhook URL is taken from (in order of preference):
+#   1. $SLACK_WEBHOOK_URL environment variable (highest priority).
+#   2. `slack_webhook_url = "..."` in the discovered Terraform stack's
+#      terraform.tfvars (i.e. $TF_DIR/terraform.tfvars).
+#   3. ./terraform.tfvars and ./aws/terraform.tfvars (legacy fallbacks).
 # -----------------------------------------------------------------------------
-TFVARS_FILE="aws/terraform.tfvars"
-if [[ -f "$TFVARS_FILE" ]]; then
-  SLACK_WEBHOOK_URL=$(awk -F' *= *' '/^slack_webhook_url *=/ {gsub(/\"/, "", $2); print $2}' "$TFVARS_FILE" | tr -d '"')
-  if [[ -n "$SLACK_WEBHOOK_URL" ]]; then
+
+# Allow the integration to be disabled entirely via env var.
+SLACK_ENABLED="${SLACK_ENABLED:-1}"
+
+if [[ "$SLACK_ENABLED" != "1" && "$SLACK_ENABLED" != "true" ]]; then
+  info "Slack notifications disabled via SLACK_ENABLED=$SLACK_ENABLED."
+else
+  # Resolve the webhook URL.
+  if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
+    TFVARS_CANDIDATES=(
+      "$TF_DIR/terraform.tfvars"
+      "./terraform.tfvars"
+      "./aws/terraform.tfvars"
+    )
+    TFVARS_FILE=""
+    for candidate in "${TFVARS_CANDIDATES[@]}"; do
+      if [[ -f "$candidate" ]]; then
+        TFVARS_FILE="$candidate"; break
+      fi
+    done
+    if [[ -n "$TFVARS_FILE" ]]; then
+      SLACK_WEBHOOK_URL=$(awk -F' *= *' '/^slack_webhook_url *=/ {gsub(/\"/, "", $2); print $2}' "$TFVARS_FILE" | tr -d '"')
+      [[ -n "$SLACK_WEBHOOK_URL" ]] && info "Slack webhook loaded from $TFVARS_FILE"
+    fi
+  else
+    info "Slack webhook taken from SLACK_WEBHOOK_URL env var."
+  fi
+
+  if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
     REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
     AWS_ACCOUNT="$ACCOUNT_ID"
     REPORT="$REPORT_JSON"
@@ -746,11 +818,10 @@ if [[ -f "$TFVARS_FILE" ]]; then
       MESSAGE+="$RESOURCES"
     fi
     payload=$(jq -Rs --arg text "$MESSAGE" '{text: $text}' <<< "")
-    curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
-    info "Sent report to Slack."
+    curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL" >/dev/null \
+      && info "Sent report to Slack." \
+      || warn "Slack POST failed (curl exit $?)."
   else
-    warn "slack_webhook_url not set in $TFVARS_FILE; skipping Slack notification."
+    warn "No Slack webhook found (set SLACK_WEBHOOK_URL or slack_webhook_url in $TF_DIR/terraform.tfvars); skipping Slack notification."
   fi
-else
-  warn "$TFVARS_FILE not found; skipping Slack notification."
 fi

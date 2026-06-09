@@ -41,7 +41,7 @@ terraform_dir = "./aws"
 
 # Scanner mode:
 #   "check-only" – portable scanner (recommended for any account)
-#   "scan-only"  – NCW-specific scanner (only in ncw-dev-infra)
+#   "scan-only"  – account-specific scanner (if you have one)
 #   "all"        – run both
 mode = "check-only"
 
