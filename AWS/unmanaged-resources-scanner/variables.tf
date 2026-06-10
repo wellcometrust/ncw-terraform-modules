@@ -86,3 +86,44 @@ variable "setup_script" {
   type        = string
   default     = ""
 }
+
+variable "strict_profile" {
+  description = "If true, the scanner will refuse to run unless an explicit AWS profile is provided (via the `profile` variable, the AWS_PROFILE environment variable, or a `--profile` flag). This prevents accidental scans against whatever ambient credentials happen to be loaded."
+  type        = bool
+  default     = false
+}
+
+variable "install_readme" {
+  description = "If true (default), write a copy of the module's README into the consumer's stack so users can read the docs without having to navigate back to the modules repo. Disable to opt out."
+  type        = bool
+  default     = true
+}
+
+variable "readme_destination" {
+  description = "Where to write the README copy when `install_readme = true`. Defaults to `<path.root>/UNMANAGED_RESOURCES_SCANNER.md`. Set to an absolute path or one relative to the consumer's root module."
+  type        = string
+  default     = ""
+}
+
+variable "install_module_copy" {
+  description = "If true, mirror the entire module (Terraform source, scripts, README, examples) into the consumer's stack so it can be reviewed without leaving the repo. Each file is managed by Terraform as a `local_file` resource."
+  type        = bool
+  default     = false
+}
+
+variable "module_copy_destination" {
+  description = "Directory (absolute or relative to `path.root`) where the module copy is written when `install_module_copy = true`. Defaults to `<path.root>/.unmanaged-resources-scanner-module/`."
+  type        = string
+  default     = ""
+}
+
+variable "module_copy_exclude" {
+  description = "Glob patterns (relative to the module root) to exclude from the module copy. Defaults exclude the examples directory and Terraform lock files."
+  type        = list(string)
+  default = [
+    "examples/**",
+    ".terraform/**",
+    ".terraform.lock.hcl",
+    "**/.DS_Store",
+  ]
+}

@@ -38,26 +38,35 @@ TF_DIR=""
 PROFILE_OVERRIDE=""
 REGIONS=()
 OUT_JSON=false
+EXPECTED_ACCOUNT="${EXPECTED_ACCOUNT:-}"
+REPO_NAME="${REPO_NAME:-}"
+STRICT_PROFILE="${STRICT_PROFILE:-0}"
 
 # Case-insensitive substrings that, if found in a resource ID or any of the
 # detail fields, cause the finding to be silently ignored. Extend as needed.
 # Generic patterns for Terraform-state buckets are included so any bucket
 # whose name contains "tfstate" or "terraform-state" is automatically
-# ignored across all our infra repos. The actual backend bucket configured
-# in `terraform.tf` is also auto-discovered and appended below.
+# ignored across all our infra repos. Extra patterns can be appended at
+# runtime via $EXTRA_IGNORE_PATTERNS (colon- or newline-separated). The
+# actual backend bucket configured in `terraform.tf` is also auto-discovered
+# and appended below.
 IGNORE_PATTERNS=(
-  "firefly"
   "tfstate"
   "terraform-state"
   "terraform-states"
-  "Softcat"
-  "softcat"
   "Key Pair"
   "org-level"
   "stacksets"
   "QuickSetup"
   "quicksetup"
 )
+
+if [[ -n "${EXTRA_IGNORE_PATTERNS:-}" ]]; then
+  # Allow ':' or newline-separated extra patterns.
+  while IFS= read -r _p; do
+    [[ -n "$_p" ]] && IGNORE_PATTERNS+=("$_p")
+  done < <(printf '%s' "$EXTRA_IGNORE_PATTERNS" | tr ':' '\n')
+fi
 
 usage() {
   sed -n '2,30p' "$0"
@@ -66,11 +75,14 @@ usage() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dir)     TF_DIR="$2"; shift 2 ;;
-    --profile) PROFILE_OVERRIDE="$2"; shift 2 ;;
-    --region)  REGIONS+=("$2"); shift 2 ;;
-    --json)    OUT_JSON=true; shift ;;
-    -h|--help) usage ;;
+    --dir)              TF_DIR="$2"; shift 2 ;;
+    --profile)          PROFILE_OVERRIDE="$2"; shift 2 ;;
+    --region)           REGIONS+=("$2"); shift 2 ;;
+    --json)             OUT_JSON=true; shift ;;
+    --expected-account) EXPECTED_ACCOUNT="$2"; shift 2 ;;
+    --repo)             REPO_NAME="$2"; shift 2 ;;
+    --strict-profile)   STRICT_PROFILE=1; shift ;;
+    -h|--help)          usage ;;
     *) echo "Unknown arg: $1"; usage ;;
   esac
 done
@@ -91,14 +103,30 @@ aws_safe() { aws "$@" 2>/dev/null || true; }
 
 # -----------------------------------------------------------------------------
 # Locate Terraform directory
+#
+# When invoked from the Terraform module, TF_DIR is always set via --dir
+# (anchored to the consumer's path.root). When invoked manually, we fall
+# back to a CWD-relative search.
 # -----------------------------------------------------------------------------
 if [[ -z "$TF_DIR" ]]; then
-  for cand in "./aws" "./terraform" "."; do
+  for cand in "." "./aws" "./terraform"; do
     if compgen -G "$cand/*.tf" > /dev/null; then TF_DIR="$cand"; break; fi
   done
 fi
 [[ -z "$TF_DIR" ]] && { err "Could not find a Terraform directory. Use --dir."; exit 1; }
 TF_DIR="$(cd "$TF_DIR" && pwd)"
+# Reject the bundled module dir itself - if the caller accidentally pointed
+# us at .terraform/modules/<x>/files we'd end up with zero managed
+# resources and flag the entire account.
+if compgen -G "$TF_DIR/check-unmanaged-resources.sh" > /dev/null; then
+  err "TF_DIR ($TF_DIR) appears to be the scanner's own module directory."
+  err "Point --dir at your Terraform stack root, not the module."
+  exit 1
+fi
+if ! compgen -G "$TF_DIR/*.tf" > /dev/null; then
+  err "No *.tf files found in $TF_DIR - cannot read Terraform state."
+  exit 1
+fi
 info "Terraform dir: $TF_DIR"
 
 # -----------------------------------------------------------------------------
@@ -121,17 +149,28 @@ done < <(awk '
 # -----------------------------------------------------------------------------
 # Detect AWS profile from provider.tf (or override / env)
 # -----------------------------------------------------------------------------
+PROFILE_SOURCE=""
 if [[ -n "$PROFILE_OVERRIDE" ]]; then
   AWS_PROFILE="$PROFILE_OVERRIDE"
+  PROFILE_SOURCE="--profile flag"
 elif [[ -n "${AWS_PROFILE:-}" ]]; then
-  : # use env
+  PROFILE_SOURCE="AWS_PROFILE env var"
 else
   AWS_PROFILE="$(grep -hE '^\s*profile\s*=' "$TF_DIR"/*.tf 2>/dev/null \
     | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)"
+  [[ -n "$AWS_PROFILE" ]] && PROFILE_SOURCE="auto-detected from $TF_DIR/*.tf"
 fi
 export AWS_PROFILE="${AWS_PROFILE:-}"
+
+if [[ "$STRICT_PROFILE" == "1" || "$STRICT_PROFILE" == "true" ]]; then
+  if [[ -z "$AWS_PROFILE" ]]; then
+    err "--strict-profile set but no AWS profile detected (flag, env var, or provider.tf)."
+    exit 1
+  fi
+fi
+
 [[ -z "$AWS_PROFILE" ]] && warn "No AWS profile detected; relying on default credentials chain."
-[[ -n "$AWS_PROFILE" ]] && info "AWS profile: $AWS_PROFILE"
+[[ -n "$AWS_PROFILE" ]] && info "AWS profile: $AWS_PROFILE ($PROFILE_SOURCE)"
 
 # -----------------------------------------------------------------------------
 # Verify credentials and detect account ID
@@ -146,6 +185,15 @@ ACCOUNT_ID="$(echo "$IDENTITY" | jq -r '.Account')"
 CALLER_ARN="$(echo "$IDENTITY" | jq -r '.Arn')"
 info "Account: $ACCOUNT_ID"
 info "Caller : $CALLER_ARN"
+
+# Hard guard against scanning the wrong account when the operator declared
+# an expected account ID. This is the central portability fix.
+if [[ -n "${EXPECTED_ACCOUNT:-}" && "$ACCOUNT_ID" != "$EXPECTED_ACCOUNT" ]]; then
+  err "Account mismatch: STS reports '$ACCOUNT_ID' but expected '$EXPECTED_ACCOUNT'."
+  err "Refusing to scan to avoid reporting on the wrong account."
+  err "Log in with the correct profile or update var.aws_account_id."
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
 # Detect regions
@@ -296,11 +344,24 @@ is_managed() {
 # Reporting
 # -----------------------------------------------------------------------------
 TS="$(date -u +%Y%m%d-%H%M%S)"
-REPORT_MD="unmanaged-resources-${ACCOUNT_ID}-${TS}.md"
-REPORT_JSON="unmanaged-resources-${ACCOUNT_ID}-${TS}.json"
+
+# Derive a repo identifier so reports from different consumer repos don't
+# collide on disk. Preference order: --repo flag / $REPO_NAME env var,
+# then `git rev-parse --show-toplevel` from inside TF_DIR, then "unknown".
+if [[ -z "${REPO_NAME:-}" ]]; then
+  REPO_NAME="$( (cd "$TF_DIR" && git rev-parse --show-toplevel 2>/dev/null) | xargs -I{} basename {} 2>/dev/null || true )"
+fi
+REPO_NAME="${REPO_NAME:-unknown}"
+# Sanitise for filenames (alnum, dash, underscore only).
+REPO_SLUG="$(printf '%s' "$REPO_NAME" | tr -c 'A-Za-z0-9_-' '-' | sed 's/-\{2,\}/-/g; s/^-//; s/-$//')"
+[[ -z "$REPO_SLUG" ]] && REPO_SLUG="unknown"
+
+REPORT_MD="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_ID}-${TS}.md"
+REPORT_JSON="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_ID}-${TS}.json"
 
 {
   echo "# Unmanaged AWS Resources Report"
+  echo "- **Repo:** \`$REPO_NAME\`"
   echo "- **Account:** \`$ACCOUNT_ID\`"
   echo "- **Caller:** \`$CALLER_ARN\`"
   echo "- **Regions scanned:** ${REGIONS[*]}"
@@ -760,20 +821,14 @@ SLACK_ENABLED="${SLACK_ENABLED:-1}"
 if [[ "$SLACK_ENABLED" != "1" && "$SLACK_ENABLED" != "true" ]]; then
   info "Slack notifications disabled via SLACK_ENABLED=$SLACK_ENABLED."
 else
-  # Resolve the webhook URL.
+  # Resolve the webhook URL. Only look inside the discovered TF_DIR - do
+  # NOT fall back to ./terraform.tfvars or ./aws/terraform.tfvars from the
+  # current working directory, because that's how reports end up being
+  # posted to the wrong team's Slack channel when this module is run from
+  # a different repo than the one it was originally designed for.
   if [[ -z "${SLACK_WEBHOOK_URL:-}" ]]; then
-    TFVARS_CANDIDATES=(
-      "$TF_DIR/terraform.tfvars"
-      "./terraform.tfvars"
-      "./aws/terraform.tfvars"
-    )
-    TFVARS_FILE=""
-    for candidate in "${TFVARS_CANDIDATES[@]}"; do
-      if [[ -f "$candidate" ]]; then
-        TFVARS_FILE="$candidate"; break
-      fi
-    done
-    if [[ -n "$TFVARS_FILE" ]]; then
+    TFVARS_FILE="$TF_DIR/terraform.tfvars"
+    if [[ -f "$TFVARS_FILE" ]]; then
       SLACK_WEBHOOK_URL=$(awk -F' *= *' '/^slack_webhook_url *=/ {gsub(/\"/, "", $2); print $2}' "$TFVARS_FILE" | tr -d '"')
       [[ -n "$SLACK_WEBHOOK_URL" ]] && info "Slack webhook loaded from $TFVARS_FILE"
     fi
@@ -782,7 +837,6 @@ else
   fi
 
   if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
-    REPO_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
     AWS_ACCOUNT="$ACCOUNT_ID"
     REPORT="$REPORT_JSON"
     MESSAGE="*Unmanaged AWS Resources Report*\n*Repo:* $REPO_NAME\n*Account:* $AWS_ACCOUNT\n"

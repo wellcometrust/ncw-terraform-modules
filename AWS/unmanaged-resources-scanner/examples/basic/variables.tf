@@ -43,3 +43,8 @@ variable "json_output" {
   default     = false
 }
 
+variable "strict_profile" {
+  description = "If true, the scanner refuses to run unless an explicit AWS profile is supplied (recommended when consuming this module from any repo)."
+  type        = bool
+  default     = true
+}
