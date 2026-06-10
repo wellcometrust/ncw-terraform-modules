@@ -8,14 +8,17 @@
 #
 # Usage:
 #   ./all-unmanaged-resources.sh [args]
-#     --json         # JSON output (passed to the check script)
-#     --check-only   # Run only the generic check script (use in other accounts)
-#     --scan-only    # Run only the account-specific scan script
-#     --profile ...  # AWS profile to use
-#     --region ...   # AWS region (repeatable; passed through)
-#     --dir <path>   # Terraform stack directory (passed to check script)
-#     --account <id> # AWS account ID for the scan-only script
-#     --setup <path> # Path to your setup/login script
+#     --json                  # JSON output (passed to the check script)
+#     --check-only            # Run only the generic check script (use in other accounts)
+#     --scan-only             # Run only the account-specific scan script
+#     --profile <name>        # AWS profile to use
+#     --region <name>         # AWS region (repeatable; passed through)
+#     --dir <path>            # Terraform stack directory (passed to check script)
+#     --account <id>          # AWS account ID for labeling / interactive prompts
+#     --expected-account <id> # Abort if STS reports a different account than this one
+#     --repo <name>           # Repo name (used in report filenames / Slack messages)
+#     --setup <path>          # Path to your setup/login script
+#     --strict-profile        # Abort unless an explicit AWS profile is set
 #
 # Requirements: scripts present in the same directory as this wrapper, and the
 # user already logged in to AWS (e.g. via `aws sso login`).
@@ -36,12 +39,19 @@ ARGS=()
 expect_profile=false
 expect_account=false
 expect_setup=false
+expect_expected_account=false
+expect_repo=false
 ACCOUNT_ID="${ACCOUNT_ID:-}"
 SETUP_SCRIPT="${SETUP_SCRIPT:-}"
+EXPECTED_ACCOUNT="${EXPECTED_ACCOUNT:-}"
+REPO_NAME="${REPO_NAME:-}"
+STRICT_PROFILE="${STRICT_PROFILE:-0}"
+PROFILE_PROVIDED=false
 
 for arg in "$@"; do
   if $expect_profile; then
     export AWS_PROFILE="$arg"
+    PROFILE_PROVIDED=true
     ARGS+=("$arg")
     expect_profile=false
     continue
@@ -56,14 +66,30 @@ for arg in "$@"; do
     expect_setup=false
     continue
   fi
+  if $expect_expected_account; then
+    EXPECTED_ACCOUNT="$arg"
+    # Forward to child scripts too (check script enforces it as well).
+    ARGS+=("--expected-account" "$arg")
+    expect_expected_account=false
+    continue
+  fi
+  if $expect_repo; then
+    REPO_NAME="$arg"
+    ARGS+=("--repo" "$arg")
+    expect_repo=false
+    continue
+  fi
   case "$arg" in
-    --json)       CHECK_JSON=true ;;
-    --check-only) RUN_SCAN=false ;;
-    --scan-only)  RUN_CHECK=false ;;
-    --profile)    ARGS+=("$arg"); expect_profile=true ;;
-    --account)    expect_account=true ;;
-    --setup)      expect_setup=true ;;
-    *)            ARGS+=("$arg") ;;
+    --json)             CHECK_JSON=true ;;
+    --check-only)       RUN_SCAN=false ;;
+    --scan-only)        RUN_CHECK=false ;;
+    --profile)          ARGS+=("$arg"); expect_profile=true ;;
+    --account)          expect_account=true ;;
+    --setup)            expect_setup=true ;;
+    --expected-account) expect_expected_account=true ;;
+    --repo)             expect_repo=true ;;
+    --strict-profile)   STRICT_PROFILE=1; ARGS+=("$arg") ;;
+    *)                  ARGS+=("$arg") ;;
   esac
 done
 
@@ -88,10 +114,21 @@ if [[ -z "${SETUP_SCRIPT:-}" ]]; then
   fi
 fi
 
+# If no --expected-account was supplied on the CLI but ACCOUNT_ID was set
+# interactively / via env, treat that as the expected account to enforce.
+if [[ -z "${EXPECTED_ACCOUNT:-}" && -n "${ACCOUNT_ID:-}" ]]; then
+  EXPECTED_ACCOUNT="$ACCOUNT_ID"
+  ARGS+=("--expected-account" "$EXPECTED_ACCOUNT")
+fi
+
 export ACCOUNT_ID
+export EXPECTED_ACCOUNT
+export REPO_NAME
 SETUP_SCRIPT="${SETUP_SCRIPT:-}"
 echo "[INFO] Target AWS account: $ACCOUNT_ID"
-[[ -n "$SETUP_SCRIPT" ]] && echo "[INFO] Setup script: $SETUP_SCRIPT"
+[[ -n "$EXPECTED_ACCOUNT" ]] && echo "[INFO] Expected AWS account (enforced): $EXPECTED_ACCOUNT"
+[[ -n "$REPO_NAME" ]]        && echo "[INFO] Repo: $REPO_NAME"
+[[ -n "$SETUP_SCRIPT" ]]     && echo "[INFO] Setup script: $SETUP_SCRIPT"
 
 # Validate selected scripts exist & are executable
 if $RUN_CHECK && [[ ! -x "$CHECK_SCRIPT" ]]; then
@@ -103,11 +140,22 @@ if $RUN_SCAN && [[ ! -x "$SCAN_SCRIPT" ]]; then
   exit 1
 fi
 
+# Strict-profile guard: refuse to silently fall back to ambient credentials
+# that may belong to an unrelated account.
+if [[ "$STRICT_PROFILE" == "1" || "$STRICT_PROFILE" == "true" ]]; then
+  if ! $PROFILE_PROVIDED && [[ -z "${AWS_PROFILE:-}" ]]; then
+    echo "[ERR] --strict-profile set but no AWS profile provided." >&2
+    echo "[ERR] Pass --profile <name> or export AWS_PROFILE before re-running." >&2
+    exit 1
+  fi
+fi
+
 export AWS_PROFILE="${AWS_PROFILE:-default}"
 
 echo "[INFO] Using AWS_PROFILE: $AWS_PROFILE"
 echo "[INFO] Verifying AWS credentials..."
-if ! aws sts get-caller-identity --output json >/dev/null 2>&1; then
+IDENTITY_JSON="$(aws sts get-caller-identity --output json 2>/dev/null || true)"
+if [[ -z "$IDENTITY_JSON" ]]; then
   echo "[ERR] Unable to authenticate to AWS with profile '$AWS_PROFILE'." >&2
   echo "[ERR] Log in first using your usual SSO flow, e.g.:" >&2
   echo "[ERR]   aws sso login --profile $AWS_PROFILE" >&2
@@ -115,6 +163,28 @@ if ! aws sts get-caller-identity --output json >/dev/null 2>&1; then
     echo "[ERR] Or run your setup script: $SETUP_SCRIPT" >&2
   fi
   exit 1
+fi
+
+# Enforce the expected-account guard early: if the ambient credentials point
+# at a different AWS account than the operator declared, ABORT before any
+# resource enumeration happens. This is the key portability fix - it
+# prevents the scanner from silently scanning the wrong account when the
+# module is consumed from a different repo.
+if [[ -n "${EXPECTED_ACCOUNT:-}" ]]; then
+  STS_ACCOUNT="$(printf '%s' "$IDENTITY_JSON" \
+    | sed -nE 's/.*"Account"[[:space:]]*:[[:space:]]*"([0-9]+)".*/\1/p' | head -n1)"
+  if [[ -z "$STS_ACCOUNT" ]]; then
+    echo "[ERR] Unable to parse account ID from STS response." >&2
+    exit 1
+  fi
+  if [[ "$STS_ACCOUNT" != "$EXPECTED_ACCOUNT" ]]; then
+    echo "[ERR] Account mismatch: STS reports '$STS_ACCOUNT' but expected '$EXPECTED_ACCOUNT'." >&2
+    echo "[ERR] Refusing to scan to avoid reporting on the wrong account." >&2
+    echo "[ERR] Fix this by either:" >&2
+    echo "[ERR]   * Logging in with the correct profile (aws sso login --profile <p>), or" >&2
+    echo "[ERR]   * Updating var.aws_account_id in your consumer module." >&2
+    exit 1
+  fi
 fi
 echo "[INFO] AWS credentials verified."
 
@@ -131,8 +201,6 @@ fi
 if $RUN_SCAN; then
   echo ""
   echo "===== Running scan-unmanaged-resources.sh ====="
-  echo "[WARN] scan-unmanaged-resources.sh is hardcoded for AWS account $ACCOUNT_ID."
-  echo "[WARN] If you are running this in a different account, use --check-only instead."
   "$SCAN_SCRIPT" ${ARGS[@]+"${ARGS[@]}"} | tee scan-unmanaged-output.md
 fi
 
@@ -141,4 +209,3 @@ echo "All scans complete."
 $RUN_CHECK && echo "Check script output:   $(ls -1t check-unmanaged-output.* 2>/dev/null | head -n1)"
 $RUN_SCAN  && echo "Scan script output:    $(ls -1t scan-unmanaged-output.md 2>/dev/null | head -n1)"
 echo "You can now review the reports."
-

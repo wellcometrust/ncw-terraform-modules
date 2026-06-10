@@ -30,8 +30,23 @@ output "context" {
     aws_account_id = var.aws_account_id
     repo_name      = var.repo_name
     regions        = var.regions
-    terraform_dir  = var.terraform_dir
+    terraform_dir  = local.effective_tf_dir
     mode           = var.mode
+    strict_profile = var.strict_profile
   }
 }
 
+output "readme_path" {
+  description = "Filesystem path of the README copy written into the consumer stack. Empty when `install_readme = false`."
+  value       = var.install_readme ? local.readme_dest_path : ""
+}
+
+output "module_copy_dir" {
+  description = "Directory where the full module copy was written. Empty when `install_module_copy = false`."
+  value       = var.install_module_copy ? local.module_copy_dest : ""
+}
+
+output "module_copy_file_count" {
+  description = "Number of files written into the module copy directory (excluding the AUTO_GENERATED.md notice)."
+  value       = var.install_module_copy ? length(local.module_copy_files) : 0
+}

@@ -19,6 +19,10 @@ module "unmanaged_scan" {
   mode           = var.mode
   run_on_apply   = var.run_on_apply
   json_output    = var.json_output
+  strict_profile = var.strict_profile
+
+  # Avoid interactive prompts when run via Terraform.
+  account_id = var.aws_account_id
 
   # Force a re-run every apply when running in CI mode.
   triggers = var.run_on_apply ? { always = timestamp() } : {}
