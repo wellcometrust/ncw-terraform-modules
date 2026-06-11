@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.5"
 }
 
 # Consume the scanner module.
@@ -11,15 +11,19 @@ terraform {
 module "unmanaged_scan" {
   source = "../../"
 
-  profile        = var.profile
-  aws_account_id = var.aws_account_id
-  repo_name      = var.repo_name
-  regions        = var.regions
+  # All five of these are now REQUIRED.
+  profile          = var.profile
+  aws_account_id   = var.aws_account_id
+  aws_account_name = var.aws_account_name
+  repo_name        = var.repo_name
+  regions          = var.regions
+
   terraform_dir  = var.terraform_dir
   mode           = var.mode
   run_on_apply   = var.run_on_apply
   json_output    = var.json_output
   strict_profile = var.strict_profile
+  dry_run        = var.dry_run
 
   # Avoid interactive prompts when run via Terraform.
   account_id = var.aws_account_id

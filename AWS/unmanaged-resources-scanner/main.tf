@@ -24,8 +24,10 @@ locals {
   json_args             = var.json_output ? ["--json"] : []
   mode_args             = local.mode_flag == "" ? [] : [local.mode_flag]
   expected_account_args = var.aws_account_id == "" ? [] : ["--expected-account", var.aws_account_id]
+  account_name_args     = var.aws_account_name == "" ? [] : ["--account-name", var.aws_account_name]
   repo_args             = var.repo_name == "" ? [] : ["--repo", var.repo_name]
   strict_args           = var.strict_profile ? ["--strict-profile"] : []
+  dry_run_args          = var.dry_run ? ["--dry-run"] : []
 
   invocation_args = concat(
     local.mode_args,
@@ -34,8 +36,10 @@ locals {
     local.dir_args,
     local.json_args,
     local.expected_account_args,
+    local.account_name_args,
     local.repo_args,
     local.strict_args,
+    local.dry_run_args,
   )
 
   # Shell-safe joined args (used by null_resource and outputs).
@@ -103,6 +107,11 @@ resource "null_resource" "run" {
 
   triggers = var.triggers
 
+  # Variable-level validations already enforce non-empty profile, repo,
+  # account id, account name and regions, so by the time we get here all
+  # the required scanning context is guaranteed to be set. No additional
+  # preconditions are needed.
+
   provisioner "local-exec" {
     working_dir = local.effective_cwd
     command     = "'${local.wrapper}' ${local.invocation_args_str}"
@@ -113,9 +122,11 @@ resource "null_resource" "run" {
       SLACK_WEBHOOK_URL = var.slack_webhook_url
       ACCOUNT_ID        = var.account_id
       EXPECTED_ACCOUNT  = var.aws_account_id
+      ACCOUNT_NAME      = var.aws_account_name
       REPO_NAME         = var.repo_name
       SETUP_SCRIPT      = var.setup_script
       STRICT_PROFILE    = var.strict_profile ? "1" : "0"
+      DRY_RUN           = var.dry_run ? "1" : "0"
     }
   }
 

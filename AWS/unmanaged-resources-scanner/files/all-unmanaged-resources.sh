@@ -16,9 +16,11 @@
 #     --dir <path>            # Terraform stack directory (passed to check script)
 #     --account <id>          # AWS account ID for labeling / interactive prompts
 #     --expected-account <id> # Abort if STS reports a different account than this one
+#     --account-name <name>   # Human-readable account name (e.g. wellcomedevelopers-prod)
 #     --repo <name>           # Repo name (used in report filenames / Slack messages)
 #     --setup <path>          # Path to your setup/login script
 #     --strict-profile        # Abort unless an explicit AWS profile is set
+#     --dry-run               # Verify auth + print banner, then exit WITHOUT scanning
 #
 # Requirements: scripts present in the same directory as this wrapper, and the
 # user already logged in to AWS (e.g. via `aws sso login`).
@@ -41,11 +43,14 @@ expect_account=false
 expect_setup=false
 expect_expected_account=false
 expect_repo=false
+expect_account_name=false
 ACCOUNT_ID="${ACCOUNT_ID:-}"
 SETUP_SCRIPT="${SETUP_SCRIPT:-}"
 EXPECTED_ACCOUNT="${EXPECTED_ACCOUNT:-}"
+ACCOUNT_NAME="${ACCOUNT_NAME:-}"
 REPO_NAME="${REPO_NAME:-}"
 STRICT_PROFILE="${STRICT_PROFILE:-0}"
+DRY_RUN="${DRY_RUN:-0}"
 PROFILE_PROVIDED=false
 
 for arg in "$@"; do
@@ -79,6 +84,12 @@ for arg in "$@"; do
     expect_repo=false
     continue
   fi
+  if $expect_account_name; then
+    ACCOUNT_NAME="$arg"
+    ARGS+=("--account-name" "$arg")
+    expect_account_name=false
+    continue
+  fi
   case "$arg" in
     --json)             CHECK_JSON=true ;;
     --check-only)       RUN_SCAN=false ;;
@@ -88,10 +99,39 @@ for arg in "$@"; do
     --setup)            expect_setup=true ;;
     --expected-account) expect_expected_account=true ;;
     --repo)             expect_repo=true ;;
+    --account-name)     expect_account_name=true ;;
     --strict-profile)   STRICT_PROFILE=1; ARGS+=("$arg") ;;
+    --dry-run)          DRY_RUN=1; ARGS+=("$arg") ;;
     *)                  ARGS+=("$arg") ;;
   esac
 done
+
+# --- Required-args enforcement (mirrors the Terraform variable contract) ----
+# When invoked from the Terraform module these are always set as env vars
+# or CLI flags. When invoked manually we still require them so the
+# scanner cannot accidentally run with missing context.
+missing=()
+[[ -z "${EXPECTED_ACCOUNT:-}" ]] && missing+=("--expected-account / EXPECTED_ACCOUNT")
+[[ -z "${ACCOUNT_NAME:-}"     ]] && missing+=("--account-name / ACCOUNT_NAME")
+[[ -z "${REPO_NAME:-}"        ]] && missing+=("--repo / REPO_NAME")
+if ! $PROFILE_PROVIDED && [[ -z "${AWS_PROFILE:-}" ]]; then
+  missing+=("--profile / AWS_PROFILE")
+fi
+# Regions: at least one --region must have been forwarded into ARGS.
+have_region=false
+for a in "${ARGS[@]:-}"; do
+  [[ "$a" == "--region" ]] && have_region=true && break
+done
+$have_region || missing+=("--region (at least one)")
+
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "[ERR] Missing required inputs:" >&2
+  for m in "${missing[@]}"; do echo "[ERR]   * $m" >&2; done
+  echo "[ERR] These inputs identify the AWS account / repo being scanned and" >&2
+  echo "[ERR] are required to prevent scanning the wrong account. When using" >&2
+  echo "[ERR] the Terraform module they are sourced from the equivalent variables." >&2
+  exit 1
+fi
 
 # --- Interactive prompts (only when not supplied via flags or env vars) --------
 # When run via Terraform local-exec, ACCOUNT_ID and SETUP_SCRIPT are set as
@@ -123,10 +163,12 @@ fi
 
 export ACCOUNT_ID
 export EXPECTED_ACCOUNT
+export ACCOUNT_NAME
 export REPO_NAME
 SETUP_SCRIPT="${SETUP_SCRIPT:-}"
 echo "[INFO] Target AWS account: $ACCOUNT_ID"
 [[ -n "$EXPECTED_ACCOUNT" ]] && echo "[INFO] Expected AWS account (enforced): $EXPECTED_ACCOUNT"
+[[ -n "$ACCOUNT_NAME" ]]     && echo "[INFO] Account name: $ACCOUNT_NAME"
 [[ -n "$REPO_NAME" ]]        && echo "[INFO] Repo: $REPO_NAME"
 [[ -n "$SETUP_SCRIPT" ]]     && echo "[INFO] Setup script: $SETUP_SCRIPT"
 
@@ -186,6 +228,40 @@ if [[ -n "${EXPECTED_ACCOUNT:-}" ]]; then
     exit 1
   fi
 fi
+
+# Pull the caller ARN out of the STS response for the banner. Done with
+# sed rather than jq to avoid an extra dependency at this layer (jq is
+# used by the child scripts, not this wrapper).
+STS_CALLER_ARN="$(printf '%s' "$IDENTITY_JSON" \
+  | sed -nE 's/.*"Arn"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n1)"
+STS_ACCOUNT_DETECTED="$(printf '%s' "$IDENTITY_JSON" \
+  | sed -nE 's/.*"Account"[[:space:]]*:[[:space:]]*"([0-9]+)".*/\1/p' | head -n1)"
+
+# Always print a prominent context banner so the operator can verify
+# WHICH AWS account / profile / repo is about to be scanned BEFORE any
+# resource enumeration happens. This is deliberately impossible to miss.
+echo ""
+echo "################################################################################"
+echo "#                       UNMANAGED RESOURCES SCANNER                            #"
+echo "################################################################################"
+echo "#  AWS Account (STS)  : ${STS_ACCOUNT_DETECTED}"
+echo "#  Expected Account   : ${EXPECTED_ACCOUNT:-<not set>}"
+echo "#  Account Name       : ${ACCOUNT_NAME:-<not set>}"
+echo "#  Caller ARN         : ${STS_CALLER_ARN}"
+echo "#  AWS Profile        : ${AWS_PROFILE}"
+echo "#  Repo               : ${REPO_NAME:-<not set>}"
+echo "#  Working dir (PWD)  : $(pwd)"
+echo "#  Dry-run            : $([[ "$DRY_RUN" == "1" || "$DRY_RUN" == "true" ]] && echo YES || echo no)"
+echo "#  Scripts dir        : $SCRIPT_DIR"
+echo "################################################################################"
+echo ""
+
+if [[ "$DRY_RUN" == "1" || "$DRY_RUN" == "true" ]]; then
+  echo "[INFO] DRY-RUN mode: skipping child scripts. No AWS resources will be enumerated."
+  echo "[INFO] If the banner above looks correct, re-run with dry_run = false."
+  exit 0
+fi
+
 echo "[INFO] AWS credentials verified."
 
 if $RUN_CHECK; then

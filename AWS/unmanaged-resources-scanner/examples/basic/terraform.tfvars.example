@@ -16,21 +16,27 @@
 #   set run_on_apply = true       below, then `terraform apply` will run it.
 # =============================================================================
 
-# --- Identification ----------------------------------------------------------
+# --- Identification (ALL REQUIRED) -------------------------------------------
 
 # AWS named profile to use (set up via `aws sso login` or your repo's
-# setup.sh).
-profile = "myaccount_AdministratorAccess"
+# setup.sh). REQUIRED.
+profile = "wellcomedevelopers_AdministratorAccess"
 
-# AWS account ID being scanned (used purely for labeling).
+# 12-digit AWS account ID being scanned. REQUIRED.
+# The scanner aborts before touching AWS if STS reports a different account.
 aws_account_id = "123456789012"
 
-# Name of the infra repo being scanned (used purely for labeling).
-repo_name = "my-other-infra-repo"
+# Human-readable name of the AWS account being scanned. REQUIRED.
+# Appears in the banner, report header, report filename and Slack message.
+aws_account_name = "wellcomedevelopers-prod"
+
+# Name of the infra repo being scanned. REQUIRED.
+repo_name = "wellcomedevelopers-repo"
 
 # --- Scan scope --------------------------------------------------------------
 
-# Regions to scan. Leave [] to auto-detect from the Terraform stack.
+# Regions to scan. REQUIRED - at least one. Auto-detection has been removed
+# to prevent silently scanning regions you didn't intend.
 regions = ["eu-west-1", "eu-west-2"]
 
 # Path to the Terraform stack to compare against (relative to where you run

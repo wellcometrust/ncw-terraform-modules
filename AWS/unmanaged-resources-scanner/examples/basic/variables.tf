@@ -1,22 +1,26 @@
 variable "profile" {
-  description = "AWS named profile to scan against (e.g. 'my-account_AdministratorAccess')."
+  description = "AWS named profile to scan against (e.g. 'wellcomedevelopers_AdministratorAccess')."
   type        = string
 }
 
 variable "aws_account_id" {
-  description = "The AWS account ID being scanned. Used purely for context/labeling."
+  description = "The 12-digit AWS account ID being scanned. Enforced by the scanner against STS."
+  type        = string
+}
+
+variable "aws_account_name" {
+  description = "Human-readable name of the AWS account (e.g. 'wellcomedevelopers-prod')."
   type        = string
 }
 
 variable "repo_name" {
-  description = "Name of the infra repo this scanner is being run against (e.g. 'my-infra-repo')."
+  description = "Name of the infra repo this scanner is being run against (e.g. 'wellcomedevelopers-repo')."
   type        = string
 }
 
 variable "regions" {
-  description = "AWS regions to scan. Leave [] to auto-discover from the Terraform stack."
+  description = "AWS regions to scan. At least one required."
   type        = list(string)
-  default     = []
 }
 
 variable "terraform_dir" {
@@ -47,4 +51,10 @@ variable "strict_profile" {
   description = "If true, the scanner refuses to run unless an explicit AWS profile is supplied (recommended when consuming this module from any repo)."
   type        = bool
   default     = true
+}
+
+variable "dry_run" {
+  description = "If true, skip the actual scan and only print the resolved context (account, profile, TF dir, regions, repo) so you can verify it before doing a real run."
+  type        = bool
+  default     = false
 }

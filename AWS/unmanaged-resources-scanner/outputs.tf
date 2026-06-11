@@ -26,13 +26,15 @@ output "run_command" {
 output "context" {
   description = "Identifying context for this scan (echoed back from inputs)."
   value = {
-    profile        = var.profile
-    aws_account_id = var.aws_account_id
-    repo_name      = var.repo_name
-    regions        = var.regions
-    terraform_dir  = local.effective_tf_dir
-    mode           = var.mode
-    strict_profile = var.strict_profile
+    profile          = var.profile
+    aws_account_id   = var.aws_account_id
+    aws_account_name = var.aws_account_name
+    repo_name        = var.repo_name
+    regions          = var.regions
+    terraform_dir    = local.effective_tf_dir
+    mode             = var.mode
+    strict_profile   = var.strict_profile
+    dry_run          = var.dry_run
   }
 }
 

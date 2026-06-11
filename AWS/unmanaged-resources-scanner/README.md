@@ -57,25 +57,76 @@ To prevent the scanner from accidentally scanning the wrong AWS account or
 the wrong Terraform stack when this module is consumed from a different
 repo, several safeguards are enforced:
 
-1. **`terraform_dir` defaults to `path.root`** (the consumer's stack
-   directory) instead of `path.cwd` (wherever `terraform` happened to be
-   invoked from). Set it explicitly only when your stack lives in a
-   non-standard subdirectory.
-2. **Expected-account guard.** When `aws_account_id` is set on the module,
-   the scanner aborts with a clear error if `aws sts get-caller-identity`
-   reports a different account. No resources are enumerated, no Slack
-   message is sent.
-3. **`strict_profile`** (optional, recommended in CI) forces the scanner
-   to refuse to run unless `profile`, the `AWS_PROFILE` env var, or a
-   `--profile` flag is set. Prevents silently using whatever ambient
-   credentials happen to be in the shell.
-4. **Slack webhook lookup is scoped to `terraform_dir`.** The legacy
-   fallbacks to `./terraform.tfvars` and `./aws/terraform.tfvars` have
-   been removed - reports can no longer be posted to a different team's
-   Slack channel because of a stray `terraform.tfvars` in the CWD.
-5. **Report filenames are namespaced by repo.** Filenames now follow
-   `unmanaged-resources-<repo>-<account>-<timestamp>.md` so reports from
-   different consumer repos don't overwrite each other.
+1. **`aws_account_id` is required when `run_on_apply = true`.** A Terraform
+   `precondition` blocks the plan if it's missing. This guarantees the
+   expected-account guard is always active.
+2. **Expected-account guard.** The scanner aborts with a clear error if
+   `aws sts get-caller-identity` reports a different account than
+   `aws_account_id`. No resources are enumerated, no Slack message is sent.
+3. **`profile` or `strict_profile` is required when `run_on_apply = true`.**
+   A `precondition` blocks plans that have neither set, so the scanner
+   cannot silently use whatever ambient credentials happen to be loaded.
+4. **`terraform_dir` defaults to `path.root`** (the consumer's stack
+   directory) instead of `path.cwd`. Set it explicitly only when your
+   stack lives in a non-standard subdirectory.
+5. **Loud context banner.** Before any AWS enumeration, the script prints
+   a banner showing the resolved AWS account, caller ARN, profile (and
+   how the profile was resolved), Terraform dir and repo. Impossible
+   to miss in `terraform apply` output.
+6. **State-sample diagnostic.** The check script prints the first 10
+   managed identifiers it pulled out of `terraform show -json` so you
+   can verify the right state was read. If the IDs look like resources
+   from a different repo, you've pointed `--dir` at the wrong stack.
+7. **`dry_run = true`** runs auth + the banner + state-sample, then
+   exits BEFORE enumerating any AWS resources. Use this for the first
+   `apply` in any new repo to confirm you're pointed at the right
+   account before letting the scanner do anything.
+8. **Slack webhook lookup is scoped to `terraform_dir`** (no fallback to
+   `./terraform.tfvars` / `./aws/terraform.tfvars`) so reports cannot be
+   posted to a different team's Slack channel.
+9. **Report filenames are namespaced by repo**: `unmanaged-resources-<repo>-<account>-<timestamp>.md`.
+
+### Recommended first-run recipe for any new repo
+
+```hcl
+module "unmanaged_scan" {
+  source = "git::https://github.com/<your-org>/ncw-terraform-modules.git//AWS/unmanaged-resources-scanner?ref=<tag>"
+
+  # REQUIRED identification - the module won't plan without these
+  profile          = "wellcomedevelopers_AdministratorAccess"
+  aws_account_id   = "111122223333"
+  aws_account_name = "wellcomedevelopers-prod"
+  repo_name        = "wellcomedevelopers-repo"
+  regions          = ["eu-west-1", "eu-west-2"]
+
+  # Recommended
+  account_id   = "111122223333"   # skips interactive prompt
+  run_on_apply = true
+  dry_run      = true             # FIRST APPLY: print context, do not scan
+}
+```
+
+Run `terraform apply`. The banner will be printed to the apply log:
+
+```
+################################################################################
+#                       UNMANAGED RESOURCES SCANNER                            #
+################################################################################
+#  AWS Account (STS)  : 111122223333
+#  Expected Account   : 111122223333
+#  Account Name       : wellcomedevelopers-prod
+#  Caller ARN         : arn:aws:sts::111122223333:assumed-role/...
+#  AWS Profile        : wellcomedevelopers_AdministratorAccess
+#  Repo               : wellcomedevelopers-repo
+#  Working dir (PWD)  : /path/to/wellcomedevelopers-repo
+#  Dry-run            : YES
+################################################################################
+```
+
+If anything in that banner is wrong (especially `AWS Account (STS)`), **fix
+your profile / SSO login before flipping `dry_run` off**. When the banner
+matches your intent, set `dry_run = false` and re-apply to do the actual
+scan.
 
 ### Interactive prompts
 
@@ -171,28 +222,38 @@ If you omit `--account` and `--setup`, you'll be prompted interactively.
 
 ## Variables
 
+The five identification inputs are **required** to prevent the scanner
+from silently running against the wrong account / repo:
+
+| Name                | Type           | Required | Description |
+|---------------------|----------------|----------|-------------|
+| `profile`           | `string`       | **yes**  | AWS named profile (e.g. `"wellcomedevelopers_AdministratorAccess"`). |
+| `aws_account_id`    | `string`       | **yes**  | 12-digit AWS account ID. Scanner aborts before touching AWS if STS reports a different account. |
+| `aws_account_name`  | `string`       | **yes**  | Human-readable account name (e.g. `"wellcomedevelopers-prod"`). Shown in banner / report / Slack. |
+| `repo_name`         | `string`       | **yes**  | Repo being scanned (e.g. `"wellcomedevelopers-repo"`). |
+| `regions`           | `list(string)` | **yes**  | Regions to scan. At least one. |
+
+Optional inputs:
+
 | Name                | Type           | Default       | Description |
 |---------------------|----------------|---------------|-------------|
-| `profile`           | `string`       | `""`          | AWS named profile to use. |
-| `aws_account_id`    | `string`       | `""`          | AWS account ID (labeling only — scanner auto-detects at runtime). |
-| `account_id`        | `string`       | `""`          | AWS account ID passed to the wrapper (avoids interactive prompt). |
-| `setup_script`      | `string`       | `""`          | Path to setup/login script (shown in auth error messages). |
-| `repo_name`         | `string`       | `""`          | Name of the infra repo being scanned (labeling only). |
-| `regions`           | `list(string)` | `[]`          | Regions to scan. Empty = auto-detect from Terraform. |
-| `terraform_dir`     | `string`       | `""`          | Terraform stack dir. Empty = auto-detect (`./aws`, `./terraform`, `.`). |
-| `mode`              | `string`       | `check-only`  | `check-only` (portable), `scan-only` (account-specific), or `all`. |
+| `terraform_dir`     | `string`       | `path.root`   | Terraform stack dir. Defaults to the consumer's root module. |
+| `mode`              | `string`       | `check-only`  | `check-only`, `scan-only`, or `all`. |
 | `run_on_apply`      | `bool`         | `false`       | Run the scanner during `terraform apply` via `null_resource`. |
-| `json_output`       | `bool`         | `false`       | Pass `--json` to produce a machine-readable JSON report. |
-| `working_dir`       | `string`       | `path.cwd`    | Where to write report files. |
-| `triggers`          | `map(string)`  | `{}`          | Triggers for the `null_resource` (e.g. `{ always = timestamp() }`). |
+| `dry_run`           | `bool`         | `false`       | Skip the scan; only print the context banner. |
+| `json_output`       | `bool`         | `false`       | Also produce a JSON report. |
+| `working_dir`       | `string`       | `path.root`   | Where to write report files. |
+| `triggers`          | `map(string)`  | `{}`          | Triggers for the `null_resource`. |
 | `slack_enabled`     | `bool`         | `true`        | If false, no Slack notification is sent. |
 | `slack_webhook_url` | `string`       | `""`          | Slack webhook URL (marked `sensitive`). |
 | `strict_profile`    | `bool`         | `false`       | If true, abort unless an explicit AWS profile is supplied. |
-| `install_readme`    | `bool`         | `true`        | If true, write a copy of this README into the consumer stack so users have the docs locally. |
-| `readme_destination`| `string`       | `""`          | Path (absolute or relative to `path.root`) for the README copy. Defaults to `<path.root>/UNMANAGED_RESOURCES_SCANNER.md`. |
-| `install_module_copy` | `bool`       | `false`       | If true, mirror the entire module (Terraform source, scripts, README) into the consumer stack. |
-| `module_copy_destination` | `string` | `""`          | Directory for the module copy. Defaults to `<path.root>/.unmanaged-resources-scanner-module/`. |
-| `module_copy_exclude` | `list(string)` | `["examples/**", ".terraform/**", ".terraform.lock.hcl", "**/.DS_Store"]` | Glob patterns (relative to the module root) to exclude from the module copy. |
+| `account_id`        | `string`       | `""`          | Convenience: passed to the wrapper to skip interactive prompts. |
+| `setup_script`      | `string`       | `""`          | Path to setup/login script (shown in auth errors). |
+| `install_readme`    | `bool`         | `true`        | Write a copy of this README into the consumer stack. |
+| `readme_destination`| `string`       | `""`          | Path for the README copy. Defaults to `<path.root>/UNMANAGED_RESOURCES_SCANNER.md`. |
+| `install_module_copy` | `bool`       | `false`       | Mirror the entire module into the consumer stack. |
+| `module_copy_destination` | `string` | `""`          | Directory for the module copy. |
+| `module_copy_exclude` | `list(string)` | `["examples/**", ".terraform/**", ".terraform.lock.hcl", "**/.DS_Store"]` | Patterns to exclude from the module copy. |
 
 ## Outputs
 

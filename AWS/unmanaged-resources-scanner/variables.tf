@@ -4,6 +4,12 @@ variable "run_on_apply" {
   default     = false
 }
 
+variable "dry_run" {
+  description = "If true, the scanner only verifies auth + prints the resolved context (account, profile, TF dir, regions, repo) and exits BEFORE enumerating any AWS resources. Use this for the first apply in a new repo to confirm you're pointed at the right account."
+  type        = bool
+  default     = false
+}
+
 variable "mode" {
   description = "Which scanner(s) to run when run_on_apply = true. One of: check-only, scan-only, all. Use 'check-only' for the portable scanner that works in any account."
   type        = string
@@ -15,27 +21,58 @@ variable "mode" {
 }
 
 variable "profile" {
-  description = "AWS named profile to pass to the scanner (--profile). Leave empty to rely on the ambient AWS credentials in the environment."
+  description = "REQUIRED. AWS named profile to pass to the scanner (--profile). The scanner will refuse to silently fall back to ambient credentials."
   type        = string
-  default     = ""
+
+  validation {
+    condition     = length(trimspace(var.profile)) > 0
+    error_message = "profile must be a non-empty AWS named profile (e.g. \"wellcomedevelopers_AdministratorAccess\")."
+  }
 }
 
 variable "aws_account_id" {
-  description = "(Optional) The AWS account ID this scan targets. Used purely for context/labeling in module outputs — the scanner itself auto-detects the account from STS at runtime."
+  description = "REQUIRED. The 12-digit AWS account ID this scan is permitted to target. The scanner aborts before touching AWS if `aws sts get-caller-identity` reports a different account."
   type        = string
-  default     = ""
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be a 12-digit AWS account ID."
+  }
+}
+
+variable "aws_account_name" {
+  description = "REQUIRED. Human-readable name of the AWS account being scanned (e.g. \"wellcomedevelopers-prod\"). Used in the banner, report header, report filename and Slack notification so the operator can immediately see which account is being scanned."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.aws_account_name)) > 0
+    error_message = "aws_account_name must be a non-empty human-readable account name."
+  }
 }
 
 variable "repo_name" {
-  description = "(Optional) The name of the infra repo being scanned. Used purely for context/labeling in module outputs."
+  description = "REQUIRED. The name of the infra repo being scanned (e.g. \"wellcomedevelopers-repo\"). Used in the banner, report header, report filename and Slack notification."
   type        = string
-  default     = ""
+
+  validation {
+    condition     = length(trimspace(var.repo_name)) > 0
+    error_message = "repo_name must be a non-empty repository name."
+  }
 }
 
 variable "regions" {
-  description = "AWS regions to scan (--region). Leave empty to let the scanner auto-discover from your Terraform stack."
+  description = "REQUIRED. AWS regions to scan (--region). Pass an explicit list - auto-discovery is disabled to prevent silently scanning regions you didn't intend."
   type        = list(string)
-  default     = []
+
+  validation {
+    condition     = length(var.regions) > 0
+    error_message = "regions must contain at least one AWS region (e.g. [\"eu-west-1\"])."
+  }
+
+  validation {
+    condition     = alltrue([for r in var.regions : can(regex("^[a-z]{2}-[a-z]+-[0-9]+$", r))])
+    error_message = "every region must be a valid AWS region code (e.g. \"eu-west-1\", \"us-east-1\")."
+  }
 }
 
 variable "terraform_dir" {

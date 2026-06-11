@@ -39,8 +39,10 @@ PROFILE_OVERRIDE=""
 REGIONS=()
 OUT_JSON=false
 EXPECTED_ACCOUNT="${EXPECTED_ACCOUNT:-}"
+ACCOUNT_NAME="${ACCOUNT_NAME:-}"
 REPO_NAME="${REPO_NAME:-}"
 STRICT_PROFILE="${STRICT_PROFILE:-0}"
+DRY_RUN="${DRY_RUN:-0}"
 
 # Case-insensitive substrings that, if found in a resource ID or any of the
 # detail fields, cause the finding to be silently ignored. Extend as needed.
@@ -80,8 +82,10 @@ while [[ $# -gt 0 ]]; do
     --region)           REGIONS+=("$2"); shift 2 ;;
     --json)             OUT_JSON=true; shift ;;
     --expected-account) EXPECTED_ACCOUNT="$2"; shift 2 ;;
+    --account-name)     ACCOUNT_NAME="$2"; shift 2 ;;
     --repo)             REPO_NAME="$2"; shift 2 ;;
     --strict-profile)   STRICT_PROFILE=1; shift ;;
+    --dry-run)          DRY_RUN=1; shift ;;
     -h|--help)          usage ;;
     *) echo "Unknown arg: $1"; usage ;;
   esac
@@ -195,6 +199,33 @@ if [[ -n "${EXPECTED_ACCOUNT:-}" && "$ACCOUNT_ID" != "$EXPECTED_ACCOUNT" ]]; the
   exit 1
 fi
 
+# Loud unambiguous banner so the operator can verify which AWS account /
+# repo / TF dir is about to be scanned. Echoed to stderr so it appears
+# in the terraform apply log even when stdout is being tee'd into a
+# report file.
+{
+  echo ""
+  echo "================================================================================"
+  echo " UNMANAGED RESOURCES SCANNER - resolved context"
+  echo "================================================================================"
+  echo "   AWS Account (STS) : $ACCOUNT_ID"
+  echo "   Expected Account  : ${EXPECTED_ACCOUNT:-<not set - guard disabled>}"
+  echo "   Account Name      : ${ACCOUNT_NAME:-<not set>}"
+  echo "   Caller ARN        : $CALLER_ARN"
+  echo "   AWS Profile       : ${AWS_PROFILE:-<none>} (${PROFILE_SOURCE:-unknown source})"
+  echo "   Terraform dir     : $TF_DIR"
+  echo "   Repo              : ${REPO_NAME:-<not set>}"
+  echo "   Working dir (PWD) : $(pwd)"
+  echo "================================================================================"
+  echo ""
+} >&2
+
+if [[ "$DRY_RUN" == "1" || "$DRY_RUN" == "true" ]]; then
+  info "DRY-RUN mode: skipping all AWS enumeration. No report will be written."
+  info "If the context banner above looks correct, re-run with dry_run = false."
+  exit 0
+fi
+
 # -----------------------------------------------------------------------------
 # Detect regions
 #   - explicit --region flags win
@@ -285,6 +316,22 @@ jq -r '
 MANAGED_COUNT=$(wc -l < "$MANAGED_IDS" | tr -d ' ')
 info "Distinct managed identifiers extracted: $MANAGED_COUNT"
 
+# Dump a small sample of MANAGED_IDS so the operator can sanity-check
+# that we read the RIGHT Terraform state. If these IDs look like they
+# belong to the wrong account/repo, that's the contamination source.
+if [[ "$MANAGED_COUNT" -gt 0 ]]; then
+  {
+    echo "   [DIAG] First 10 managed identifiers from the state read at $TF_DIR:"
+    head -n 10 "$MANAGED_IDS" | sed 's/^/   [DIAG]     /'
+    if [[ "$MANAGED_COUNT" -gt 10 ]]; then
+      echo "   [DIAG]     ... (+$((MANAGED_COUNT - 10)) more)"
+    fi
+  } >&2
+else
+  warn "Terraform state at $TF_DIR contains ZERO managed identifiers."
+  warn "Either the stack is empty, or you are pointing --dir at the wrong directory."
+fi
+
 # Load managed IDs into a single newline-delimited string and do membership
 # tests with bash substring matching. This avoids spawning `grep -Fxq` for
 # every candidate and works on bash 3.2 (macOS) which lacks `declare -A`.
@@ -356,13 +403,19 @@ REPO_NAME="${REPO_NAME:-unknown}"
 REPO_SLUG="$(printf '%s' "$REPO_NAME" | tr -c 'A-Za-z0-9_-' '-' | sed 's/-\{2,\}/-/g; s/^-//; s/-$//')"
 [[ -z "$REPO_SLUG" ]] && REPO_SLUG="unknown"
 
-REPORT_MD="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_ID}-${TS}.md"
-REPORT_JSON="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_ID}-${TS}.json"
+# Sanitise the account name for use in filenames too.
+ACCOUNT_NAME_DISPLAY="${ACCOUNT_NAME:-unknown-account}"
+ACCOUNT_NAME_SLUG="$(printf '%s' "$ACCOUNT_NAME_DISPLAY" | tr -c 'A-Za-z0-9_-' '-' | sed 's/-\{2,\}/-/g; s/^-//; s/-$//')"
+[[ -z "$ACCOUNT_NAME_SLUG" ]] && ACCOUNT_NAME_SLUG="unknown-account"
+
+REPORT_MD="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_NAME_SLUG}-${ACCOUNT_ID}-${TS}.md"
+REPORT_JSON="unmanaged-resources-${REPO_SLUG}-${ACCOUNT_NAME_SLUG}-${ACCOUNT_ID}-${TS}.json"
 
 {
   echo "# Unmanaged AWS Resources Report"
   echo "- **Repo:** \`$REPO_NAME\`"
-  echo "- **Account:** \`$ACCOUNT_ID\`"
+  echo "- **AWS Account Name:** \`$ACCOUNT_NAME_DISPLAY\`"
+  echo "- **AWS Account ID:** \`$ACCOUNT_ID\`"
   echo "- **Caller:** \`$CALLER_ARN\`"
   echo "- **Regions scanned:** ${REGIONS[*]}"
   echo "- **Terraform dir:** \`$TF_DIR\`"
@@ -785,13 +838,16 @@ FINDINGS_JSON+="]"
 
 jq -n \
   --arg account "$ACCOUNT_ID" \
+  --arg account_name "$ACCOUNT_NAME_DISPLAY" \
+  --arg repo "$REPO_NAME" \
   --arg caller "$CALLER_ARN" \
   --arg tf_dir "$TF_DIR" \
   --argjson regions "$(printf '%s\n' "${REGIONS[@]}" | jq -R . | jq -s .)" \
   --argjson managed "$RES_COUNT" \
   --argjson findings "$FINDINGS_JSON" \
   '{
-     account:$account, caller:$caller, terraform_dir:$tf_dir,
+     account:$account, account_name:$account_name, repo:$repo,
+     caller:$caller, terraform_dir:$tf_dir,
      regions:$regions, managed_resources:$managed,
      unmanaged_count: ($findings | length),
      findings: $findings,
@@ -839,7 +895,7 @@ else
   if [[ -n "${SLACK_WEBHOOK_URL:-}" ]]; then
     AWS_ACCOUNT="$ACCOUNT_ID"
     REPORT="$REPORT_JSON"
-    MESSAGE="*Unmanaged AWS Resources Report*\n*Repo:* $REPO_NAME\n*Account:* $AWS_ACCOUNT\n"
+    MESSAGE="*Unmanaged AWS Resources Report*\n*Repo:* $REPO_NAME\n*AWS Account Name:* $ACCOUNT_NAME_DISPLAY\n*AWS Account ID:* $AWS_ACCOUNT\n"
     RESOURCES=$(jq -r --arg acct "$AWS_ACCOUNT" '
       .findings[] |
       . as $f |
