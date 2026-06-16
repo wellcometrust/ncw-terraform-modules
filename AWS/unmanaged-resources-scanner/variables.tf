@@ -1,73 +1,129 @@
-variable "profile" {
-  description = "REQUIRED. AWS named profile to use (e.g. \"wellcomedevelopers_AdministratorAccess\")."
-  type        = string
+variable "run_on_apply" {
+  description = "If true, runs the scanner during `terraform apply` via a null_resource. Useful for CI. If false, the module just delivers the scripts and outputs the path."
+  type        = bool
+  default     = false
+}
 
+variable "mode" {
+  description = "Which scanner(s) to run when run_on_apply = true. One of: check-only, scan-only, all. Use 'check-only' for the portable scanner that works in any account."
+  type        = string
+  default     = "check-only"
   validation {
-    condition     = length(trimspace(var.profile)) > 0
-    error_message = "profile must be a non-empty AWS named profile."
+    condition     = contains(["check-only", "scan-only", "all"], var.mode)
+    error_message = "mode must be one of: check-only, scan-only, all."
   }
+}
+
+variable "profile" {
+  description = "AWS named profile to pass to the scanner (--profile). Leave empty to rely on the ambient AWS credentials in the environment."
+  type        = string
+  default     = ""
 }
 
 variable "aws_account_id" {
-  description = "REQUIRED. 12-digit AWS account ID being scanned. The scanner aborts if STS reports a different account."
+  description = "(Optional) The AWS account ID this scan targets. Used purely for context/labeling in module outputs — the scanner itself auto-detects the account from STS at runtime."
   type        = string
-
-  validation {
-    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
-    error_message = "aws_account_id must be a 12-digit AWS account ID."
-  }
-}
-
-variable "aws_account_name" {
-  description = "REQUIRED. Human-readable account name (e.g. \"wellcomedevelopers-prod\"). Appears in the banner, report and Slack message."
-  type        = string
-
-  validation {
-    condition     = length(trimspace(var.aws_account_name)) > 0
-    error_message = "aws_account_name must be a non-empty string."
-  }
+  default     = ""
 }
 
 variable "repo_name" {
-  description = "REQUIRED. Name of this repo (e.g. \"wellcomedevelopers-repo\"). Appears in the banner, report filename and Slack message."
+  description = "(Optional) The name of the infra repo being scanned. Used purely for context/labeling in module outputs."
   type        = string
-
-  validation {
-    condition     = length(trimspace(var.repo_name)) > 0
-    error_message = "repo_name must be a non-empty string."
-  }
+  default     = ""
 }
 
 variable "regions" {
-  description = "REQUIRED. AWS regions to scan (at least one, e.g. [\"eu-west-1\"])."
+  description = "AWS regions to scan (--region). Leave empty to let the scanner auto-discover from your Terraform stack."
   type        = list(string)
-
-  validation {
-    condition     = length(var.regions) > 0
-    error_message = "regions must contain at least one AWS region."
-  }
-
-  validation {
-    condition     = alltrue([for r in var.regions : can(regex("^[a-z]{2}-[a-z]+-[0-9]+$", r))])
-    error_message = "Every region must be a valid AWS region code (e.g. \"eu-west-1\")."
-  }
+  default     = []
 }
 
 variable "terraform_dir" {
-  description = "Path to the Terraform stack to compare against. Defaults to the consumer's root module directory (path.root)."
+  description = "Path to the Terraform stack to scan (--dir). Leave empty to let the scanner auto-detect (./aws, ./terraform, or .)."
   type        = string
   default     = ""
 }
 
 variable "json_output" {
-  description = "If true, the script also writes a machine-readable JSON report alongside the Markdown report."
+  description = "If true, pass --json to the check script (writes machine-readable JSON in addition to Markdown)."
   type        = bool
   default     = false
 }
 
+variable "working_dir" {
+  description = "Directory where the scanner should write its output reports. Defaults to the consumer's current working directory."
+  type        = string
+  default     = ""
+}
+
+variable "triggers" {
+  description = "Optional map of triggers that force the null_resource to re-run on change (only used when run_on_apply = true). Common pattern: { always = timestamp() }."
+  type        = map(string)
+  default     = {}
+}
+
+variable "slack_enabled" {
+  description = "If true (default), the check script will try to send a Slack notification using `slack_webhook_url` from the Terraform stack's terraform.tfvars (or $SLACK_WEBHOOK_URL). Set to false to suppress Slack entirely."
+  type        = bool
+  default     = true
+}
+
 variable "slack_webhook_url" {
-  description = "Optional Slack webhook URL. When set, the script posts a summary after each scan. Can also be provided via the SLACK_WEBHOOK_URL environment variable or slack_webhook_url in the stack's terraform.tfvars."
+  description = "Optional Slack webhook URL to send the report to. Overrides any `slack_webhook_url` found in the stack's terraform.tfvars. Leave empty to use the tfvars value or disable Slack."
   type        = string
   default     = ""
   sensitive   = true
+}
+
+variable "account_id" {
+  description = "AWS account ID passed to the wrapper script. When run via Terraform this avoids interactive prompts. When running the script manually, omit this and you will be prompted."
+  type        = string
+  default     = ""
+}
+
+variable "setup_script" {
+  description = "Path to a setup/login script shown in error messages when authentication fails. When run via Terraform this avoids interactive prompts. When running the script manually, omit this and you will be prompted."
+  type        = string
+  default     = ""
+}
+
+variable "strict_profile" {
+  description = "If true, the scanner will refuse to run unless an explicit AWS profile is provided (via the `profile` variable, the AWS_PROFILE environment variable, or a `--profile` flag). This prevents accidental scans against whatever ambient credentials happen to be loaded."
+  type        = bool
+  default     = false
+}
+
+variable "install_readme" {
+  description = "If true (default), write a copy of the module's README into the consumer's stack so users can read the docs without having to navigate back to the modules repo. Disable to opt out."
+  type        = bool
+  default     = true
+}
+
+variable "readme_destination" {
+  description = "Where to write the README copy when `install_readme = true`. Defaults to `<path.root>/UNMANAGED_RESOURCES_SCANNER.md`. Set to an absolute path or one relative to the consumer's root module."
+  type        = string
+  default     = ""
+}
+
+variable "install_module_copy" {
+  description = "If true, mirror the entire module (Terraform source, scripts, README, examples) into the consumer's stack so it can be reviewed without leaving the repo. Each file is managed by Terraform as a `local_file` resource."
+  type        = bool
+  default     = false
+}
+
+variable "module_copy_destination" {
+  description = "Directory (absolute or relative to `path.root`) where the module copy is written when `install_module_copy = true`. Defaults to `<path.root>/.unmanaged-resources-scanner-module/`."
+  type        = string
+  default     = ""
+}
+
+variable "module_copy_exclude" {
+  description = "Glob patterns (relative to the module root) to exclude from the module copy. Defaults exclude the examples directory and Terraform lock files."
+  type        = list(string)
+  default = [
+    "examples/**",
+    ".terraform/**",
+    ".terraform.lock.hcl",
+    "**/.DS_Store",
+  ]
 }
