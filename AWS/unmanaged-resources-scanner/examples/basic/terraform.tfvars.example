@@ -1,61 +1,19 @@
 # =============================================================================
 # terraform.tfvars.example
 #
-# Copy this file to `terraform.tfvars` and edit the values for the AWS
-# account and repo you are scanning:
+# Copy this to terraform.tfvars and edit the values, then:
 #
-#   cp terraform.tfvars.example terraform.tfvars
-#
-# Then run:
-#
-#   terraform init
-#   terraform apply               # delivery mode: prints the scan command
-#   $(terraform output -raw scan_command)
-#
-# Or for CI mode (run the scan during apply):
-#   set run_on_apply = true       below, then `terraform apply` will run it.
+#   terraform init -upgrade
+#   terraform apply
+#   $(terraform output -raw scan_command)   # ← run the scan
 # =============================================================================
 
-# --- Identification (ALL REQUIRED) -------------------------------------------
-
-# AWS named profile to use (set up via `aws sso login` or your repo's
-# setup.sh). REQUIRED.
-profile = "wellcomedevelopers_AdministratorAccess"
-
-# 12-digit AWS account ID being scanned. REQUIRED.
-# The scanner aborts before touching AWS if STS reports a different account.
-aws_account_id = "123456789012"
-
-# Human-readable name of the AWS account being scanned. REQUIRED.
-# Appears in the banner, report header, report filename and Slack message.
+profile          = "wellcomedevelopers_AdministratorAccess"
+aws_account_id   = "123456789012"
 aws_account_name = "wellcomedevelopers-prod"
+repo_name        = "wellcomedevelopers-repo"
+regions          = ["eu-west-1", "eu-west-2"]
 
-# Name of the infra repo being scanned. REQUIRED.
-repo_name = "wellcomedevelopers-repo"
-
-# --- Scan scope --------------------------------------------------------------
-
-# Regions to scan. REQUIRED - at least one. Auto-detection has been removed
-# to prevent silently scanning regions you didn't intend.
-regions = ["eu-west-1", "eu-west-2"]
-
-# Path to the Terraform stack to compare against (relative to where you run
-# terraform, or absolute).
-terraform_dir = "./aws"
-
-# --- Behaviour ---------------------------------------------------------------
-
-# Scanner mode:
-#   "check-only" – portable scanner (recommended for any account)
-#   "scan-only"  – account-specific scanner (if you have one)
-#   "all"        – run both
-mode = "check-only"
-
-# If true, the scan runs during `terraform apply` (CI-friendly).
-# If false, Terraform just delivers the scripts; run them via the
-# `scan_command` output.
-run_on_apply = false
-
-# If true, also write a machine-readable JSON report.
-json_output = false
-
+# Optional
+terraform_dir = "./aws"    # defaults to the root module dir if omitted
+json_output   = false

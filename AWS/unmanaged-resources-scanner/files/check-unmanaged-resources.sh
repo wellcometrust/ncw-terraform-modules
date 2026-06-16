@@ -1,32 +1,23 @@
 #!/usr/bin/env bash
 # =============================================================================
 # check-unmanaged-resources.sh
-
-# Generic, portable drift / unmanaged-resources scanner for any of our
-# AWS infrastructure account repos.
-
-# It performs NO hardcoding of account IDs, profile names, regions, bucket
-# names or resource names. Everything is discovered at runtime from:
-
-#   1. The Terraform configuration in the target directory (provider profile,
-#      backend, region variables).
-#   2. The Terraform remote state (resources that ARE managed).
-#   3. STS get-caller-identity (account currently authenticated).
-#   4. The AWS CLI (resources that EXIST in the account).
-
-# It then prints / writes a report of every AWS resource it can see in the
-# account that is NOT tracked in the remote state file.
-
-# No credentials, secrets or account-specific identifiers are embedded.
-
-# Usage:
-#   ./check-unmanaged-resources.sh                       # use ./aws or .
-#   ./check-unmanaged-resources.sh --dir ../aws
-#   ./check-unmanaged-resources.sh --profile my-profile
-#   ./check-unmanaged-resources.sh --region eu-west-1 --region eu-west-2
-#   ./check-unmanaged-resources.sh --json                # JSON instead of MD
-
-# Requirements: terraform >= 1.x, aws CLI v2, jq
+#
+# Portable unmanaged-resources scanner. Compares the live AWS account against
+# a Terraform remote state and reports every resource that exists in AWS but
+# is NOT tracked in state.
+#
+# Usage (generated automatically by the Terraform module - see run_command output):
+#   ./check-unmanaged-resources.sh \
+#     --profile  <aws-profile>       \
+#     --region   <region> ...        \
+#     --dir      <tf-stack-path>     \
+#     --expected-account <12-digit>  \
+#     --account-name <human-name>    \
+#     --repo     <repo-name>         \
+#     [--json]
+#
+# Can also be run manually with the same flags.
+# Requirements: aws CLI v2, terraform >= 1.x, jq
 # =============================================================================
 
 set -euo pipefail
@@ -35,23 +26,16 @@ set -euo pipefail
 # CLI args
 # -----------------------------------------------------------------------------
 TF_DIR=""
-PROFILE_OVERRIDE=""
+PROFILE=""
 REGIONS=()
 OUT_JSON=false
-EXPECTED_ACCOUNT="${EXPECTED_ACCOUNT:-}"
-ACCOUNT_NAME="${ACCOUNT_NAME:-}"
-REPO_NAME="${REPO_NAME:-}"
-STRICT_PROFILE="${STRICT_PROFILE:-0}"
-DRY_RUN="${DRY_RUN:-0}"
+EXPECTED_ACCOUNT=""
+ACCOUNT_NAME=""
+REPO_NAME=""
 
-# Case-insensitive substrings that, if found in a resource ID or any of the
-# detail fields, cause the finding to be silently ignored. Extend as needed.
-# Generic patterns for Terraform-state buckets are included so any bucket
-# whose name contains "tfstate" or "terraform-state" is automatically
-# ignored across all our infra repos. Extra patterns can be appended at
-# runtime via $EXTRA_IGNORE_PATTERNS (colon- or newline-separated). The
-# actual backend bucket configured in `terraform.tf` is also auto-discovered
-# and appended below.
+# Case-insensitive substrings - if found in a resource ID or detail field
+# the finding is silently ignored. Add entries here for resources you always
+# want to exclude (e.g. a known vendor tool, a legacy bucket).
 IGNORE_PATTERNS=(
   "tfstate"
   "terraform-state"
@@ -63,33 +47,40 @@ IGNORE_PATTERNS=(
   "quicksetup"
 )
 
-if [[ -n "${EXTRA_IGNORE_PATTERNS:-}" ]]; then
-  # Allow ':' or newline-separated extra patterns.
-  while IFS= read -r _p; do
-    [[ -n "$_p" ]] && IGNORE_PATTERNS+=("$_p")
-  done < <(printf '%s' "$EXTRA_IGNORE_PATTERNS" | tr ':' '\n')
-fi
-
 usage() {
-  sed -n '2,30p' "$0"
+  sed -n '2,20p' "$0"
   exit 1
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dir)              TF_DIR="$2"; shift 2 ;;
-    --profile)          PROFILE_OVERRIDE="$2"; shift 2 ;;
+    --profile)          PROFILE="$2"; shift 2 ;;
     --region)           REGIONS+=("$2"); shift 2 ;;
     --json)             OUT_JSON=true; shift ;;
     --expected-account) EXPECTED_ACCOUNT="$2"; shift 2 ;;
     --account-name)     ACCOUNT_NAME="$2"; shift 2 ;;
     --repo)             REPO_NAME="$2"; shift 2 ;;
-    --strict-profile)   STRICT_PROFILE=1; shift ;;
-    --dry-run)          DRY_RUN=1; shift ;;
     -h|--help)          usage ;;
     *) echo "Unknown arg: $1"; usage ;;
   esac
 done
+
+# All five identification inputs are required.
+missing=()
+[[ -z "$PROFILE"          ]] && missing+=("--profile")
+[[ -z "$EXPECTED_ACCOUNT" ]] && missing+=("--expected-account")
+[[ -z "$ACCOUNT_NAME"     ]] && missing+=("--account-name")
+[[ -z "$REPO_NAME"        ]] && missing+=("--repo")
+[[ ${#REGIONS[@]} -eq 0   ]] && missing+=("--region (at least one)")
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "[ERR] Missing required arguments:" >&2
+  for m in "${missing[@]}"; do echo "[ERR]   $m" >&2; done
+  echo "[ERR] Run with --help for usage." >&2
+  exit 1
+fi
+
+export AWS_PROFILE="$PROFILE"
 
 # -----------------------------------------------------------------------------
 # Colours / helpers
@@ -151,107 +142,44 @@ done < <(awk '
 ' "$TF_DIR"/*.tf 2>/dev/null | sort -u)
 
 # -----------------------------------------------------------------------------
-# Detect AWS profile from provider.tf (or override / env)
-# -----------------------------------------------------------------------------
-PROFILE_SOURCE=""
-if [[ -n "$PROFILE_OVERRIDE" ]]; then
-  AWS_PROFILE="$PROFILE_OVERRIDE"
-  PROFILE_SOURCE="--profile flag"
-elif [[ -n "${AWS_PROFILE:-}" ]]; then
-  PROFILE_SOURCE="AWS_PROFILE env var"
-else
-  AWS_PROFILE="$(grep -hE '^\s*profile\s*=' "$TF_DIR"/*.tf 2>/dev/null \
-    | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' || true)"
-  [[ -n "$AWS_PROFILE" ]] && PROFILE_SOURCE="auto-detected from $TF_DIR/*.tf"
-fi
-export AWS_PROFILE="${AWS_PROFILE:-}"
-
-if [[ "$STRICT_PROFILE" == "1" || "$STRICT_PROFILE" == "true" ]]; then
-  if [[ -z "$AWS_PROFILE" ]]; then
-    err "--strict-profile set but no AWS profile detected (flag, env var, or provider.tf)."
-    exit 1
-  fi
-fi
-
-[[ -z "$AWS_PROFILE" ]] && warn "No AWS profile detected; relying on default credentials chain."
-[[ -n "$AWS_PROFILE" ]] && info "AWS profile: $AWS_PROFILE ($PROFILE_SOURCE)"
-
-# -----------------------------------------------------------------------------
-# Verify credentials and detect account ID
+# Verify credentials and enforce expected-account guard
 # -----------------------------------------------------------------------------
 section "Verifying AWS credentials"
 IDENTITY="$(aws_safe sts get-caller-identity --output json)"
 if [[ -z "$IDENTITY" ]]; then
-  err "Unable to authenticate to AWS. Run your SSO login first."
+  err "Unable to authenticate with profile '$AWS_PROFILE'."
+  err "Run: aws sso login --profile $AWS_PROFILE"
   exit 1
 fi
 ACCOUNT_ID="$(echo "$IDENTITY" | jq -r '.Account')"
 CALLER_ARN="$(echo "$IDENTITY" | jq -r '.Arn')"
-info "Account: $ACCOUNT_ID"
-info "Caller : $CALLER_ARN"
 
-# Hard guard against scanning the wrong account when the operator declared
-# an expected account ID. This is the central portability fix.
-if [[ -n "${EXPECTED_ACCOUNT:-}" && "$ACCOUNT_ID" != "$EXPECTED_ACCOUNT" ]]; then
+if [[ "$ACCOUNT_ID" != "$EXPECTED_ACCOUNT" ]]; then
   err "Account mismatch: STS reports '$ACCOUNT_ID' but expected '$EXPECTED_ACCOUNT'."
-  err "Refusing to scan to avoid reporting on the wrong account."
-  err "Log in with the correct profile or update var.aws_account_id."
+  err "Check that you are logged in with the right profile: aws sso login --profile $AWS_PROFILE"
   exit 1
 fi
 
-# Loud unambiguous banner so the operator can verify which AWS account /
-# repo / TF dir is about to be scanned. Echoed to stderr so it appears
-# in the terraform apply log even when stdout is being tee'd into a
-# report file.
+# Banner - printed to stderr so it's always visible even when stdout is piped.
 {
   echo ""
   echo "================================================================================"
-  echo " UNMANAGED RESOURCES SCANNER - resolved context"
+  echo " UNMANAGED RESOURCES SCANNER"
   echo "================================================================================"
-  echo "   AWS Account (STS) : $ACCOUNT_ID"
-  echo "   Expected Account  : ${EXPECTED_ACCOUNT:-<not set - guard disabled>}"
-  echo "   Account Name      : ${ACCOUNT_NAME:-<not set>}"
+  echo "   AWS Account       : $ACCOUNT_ID ($ACCOUNT_NAME)"
   echo "   Caller ARN        : $CALLER_ARN"
-  echo "   AWS Profile       : ${AWS_PROFILE:-<none>} (${PROFILE_SOURCE:-unknown source})"
+  echo "   AWS Profile       : $AWS_PROFILE"
+  echo "   Repo              : $REPO_NAME"
   echo "   Terraform dir     : $TF_DIR"
-  echo "   Repo              : ${REPO_NAME:-<not set>}"
   echo "   Working dir (PWD) : $(pwd)"
   echo "================================================================================"
   echo ""
 } >&2
 
-if [[ "$DRY_RUN" == "1" || "$DRY_RUN" == "true" ]]; then
-  info "DRY-RUN mode: skipping all AWS enumeration. No report will be written."
-  info "If the context banner above looks correct, re-run with dry_run = false."
-  exit 0
-fi
 
 # -----------------------------------------------------------------------------
-# Detect regions
-#   - explicit --region flags win
-#   - otherwise pull region values out of the provider.tf blocks
-#   - otherwise fall back to the current default region
+# Regions are always provided explicitly via --region flags (required).
 # -----------------------------------------------------------------------------
-if [[ ${#REGIONS[@]} -eq 0 ]]; then
-  # Look for region = "literal" (skip var.* references)
-  while IFS= read -r r; do
-    [[ -n "$r" ]] && REGIONS+=("$r")
-  done < <(grep -hE '^\s*region\s*=\s*"' "$TF_DIR"/*.tf 2>/dev/null \
-            | sed -E 's/.*"([^"]+)".*/\1/' | sort -u)
-
-  # Resolve region variables (region = var.xxx) via terraform.tfvars
-  if compgen -G "$TF_DIR/terraform.tfvars" > /dev/null; then
-    while IFS= read -r r; do
-      [[ -n "$r" ]] && REGIONS+=("$r")
-    done < <(grep -hE '^[A-Za-z_][A-Za-z0-9_-]*\s*=\s*"[a-z]{2}-[a-z]+-[0-9]"' \
-              "$TF_DIR/terraform.tfvars" 2>/dev/null \
-              | sed -E 's/.*"([^"]+)".*/\1/' | sort -u)
-  fi
-fi
-if [[ ${#REGIONS[@]} -eq 0 ]]; then
-  DEFAULT_REGION="$(aws configure get region 2>/dev/null || echo eu-west-1)"
-  REGIONS+=("$DEFAULT_REGION")
-fi
   # Deduplicate (POSIX-compatible)
   deduped_regions_set=""
   deduped_regions=()
@@ -316,21 +244,6 @@ jq -r '
 MANAGED_COUNT=$(wc -l < "$MANAGED_IDS" | tr -d ' ')
 info "Distinct managed identifiers extracted: $MANAGED_COUNT"
 
-# Dump a small sample of MANAGED_IDS so the operator can sanity-check
-# that we read the RIGHT Terraform state. If these IDs look like they
-# belong to the wrong account/repo, that's the contamination source.
-if [[ "$MANAGED_COUNT" -gt 0 ]]; then
-  {
-    echo "   [DIAG] First 10 managed identifiers from the state read at $TF_DIR:"
-    head -n 10 "$MANAGED_IDS" | sed 's/^/   [DIAG]     /'
-    if [[ "$MANAGED_COUNT" -gt 10 ]]; then
-      echo "   [DIAG]     ... (+$((MANAGED_COUNT - 10)) more)"
-    fi
-  } >&2
-else
-  warn "Terraform state at $TF_DIR contains ZERO managed identifiers."
-  warn "Either the stack is empty, or you are pointing --dir at the wrong directory."
-fi
 
 # Load managed IDs into a single newline-delimited string and do membership
 # tests with bash substring matching. This avoids spawning `grep -Fxq` for
