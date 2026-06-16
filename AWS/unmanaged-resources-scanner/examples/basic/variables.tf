@@ -1,50 +1,36 @@
 variable "profile" {
-  description = "AWS named profile to scan against (e.g. 'my-account_AdministratorAccess')."
+  description = "AWS named profile (e.g. 'wellcomedevelopers_AdministratorAccess')."
   type        = string
 }
 
 variable "aws_account_id" {
-  description = "The AWS account ID being scanned. Used purely for context/labeling."
+  description = "12-digit AWS account ID being scanned."
+  type        = string
+}
+
+variable "aws_account_name" {
+  description = "Human-readable account name (e.g. 'wellcomedevelopers-prod')."
   type        = string
 }
 
 variable "repo_name" {
-  description = "Name of the infra repo this scanner is being run against (e.g. 'my-infra-repo')."
+  description = "Name of this repo (e.g. 'wellcomedevelopers-repo')."
   type        = string
 }
 
 variable "regions" {
-  description = "AWS regions to scan. Leave [] to auto-discover from the Terraform stack."
+  description = "AWS regions to scan (at least one)."
   type        = list(string)
-  default     = []
 }
 
 variable "terraform_dir" {
-  description = "Path to the Terraform stack directory to compare against."
+  description = "Path to the Terraform stack to compare against."
   type        = string
-  default     = "./aws"
-}
-
-variable "mode" {
-  description = "Which scanner(s) to run when run_on_apply = true. One of: check-only, scan-only, all."
-  type        = string
-  default     = "check-only"
-}
-
-variable "run_on_apply" {
-  description = "If true, run the scanner during `terraform apply` (CI mode)."
-  type        = bool
-  default     = false
+  default     = ""
 }
 
 variable "json_output" {
-  description = "If true, also produce a JSON report."
+  description = "If true, also write a JSON report."
   type        = bool
   default     = false
-}
-
-variable "strict_profile" {
-  description = "If true, the scanner refuses to run unless an explicit AWS profile is supplied (recommended when consuming this module from any repo)."
-  type        = bool
-  default     = true
 }
