@@ -59,6 +59,8 @@ IGNORE_PATTERNS=(
   "stacksets"
   "QuickSetup"
   "quicksetup"
+  "Softcat"
+  "softcat"
 )
 
 if [[ -n "${EXTRA_IGNORE_PATTERNS:-}" ]]; then
