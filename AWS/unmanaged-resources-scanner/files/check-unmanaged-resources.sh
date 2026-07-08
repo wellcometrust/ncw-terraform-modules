@@ -342,16 +342,40 @@ is_managed() {
   return 1
 }
 
+# Resolve a GitHub-style repo label (<owner>/<repo>) from the scanned stack.
+detect_repo_name() {
+  local repo="" git_root="" remote_url=""
+
+  if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+    repo="$GITHUB_REPOSITORY"
+  fi
+
+  if [[ -z "$repo" ]]; then
+    git_root="$(cd "$TF_DIR" && git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -n "$git_root" ]]; then
+      remote_url="$(git -C "$git_root" config --get remote.origin.url 2>/dev/null || true)"
+      if [[ -n "$remote_url" ]]; then
+        repo="$(printf '%s' "$remote_url" | sed -E \
+          's#^(git@|ssh://git@)github\.com[:/]##; s#^https?://github\.com/##; s#\.git$##')"
+      fi
+      [[ -z "$repo" ]] && repo="$(basename "$git_root")"
+    fi
+  fi
+
+  printf '%s' "$repo"
+}
+
 # -----------------------------------------------------------------------------
 # Reporting
 # -----------------------------------------------------------------------------
 TS="$(date -u +%Y%m%d-%H%M%S)"
 
 # Derive a repo identifier so reports from different consumer repos don't
-# collide on disk. Preference order: --repo flag / $REPO_NAME env var,
-# then `git rev-parse --show-toplevel` from inside TF_DIR, then "unknown".
-if [[ -z "${REPO_NAME:-}" ]]; then
-  REPO_NAME="$( (cd "$TF_DIR" && git rev-parse --show-toplevel 2>/dev/null) | xargs -I{} basename {} 2>/dev/null || true )"
+# collide on disk. If the configured value is empty or still set to the legacy
+# placeholder ("ncw-dev"), prefer the repository detected from Git/GitHub.
+DETECTED_REPO_NAME="$(detect_repo_name)"
+if [[ -z "${REPO_NAME:-}" || "$REPO_NAME" == "ncw-dev" ]]; then
+  [[ -n "$DETECTED_REPO_NAME" ]] && REPO_NAME="$DETECTED_REPO_NAME"
 fi
 REPO_NAME="${REPO_NAME:-unknown}"
 # Sanitise for filenames (alnum, dash, underscore only).
