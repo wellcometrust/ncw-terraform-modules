@@ -1,0 +1,10 @@
+allowed_cidrs = ["203.0.113.10/32"]
+
+tf_state_bucket_names = {
+  "111111111111" = "team-a-terraform-state"
+  "222222222222" = "team-b-terraform-state"
+}
+
+tags = {
+  Owner = "platform"
+}
